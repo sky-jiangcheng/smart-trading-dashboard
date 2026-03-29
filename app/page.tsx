@@ -48,16 +48,22 @@ const COPY: Record<
     headerDescription: string;
     refreshing: string;
     upToDate: string;
+    adminLabel: string;
+    adminAriaLabel: string;
     newsTitle: string;
     newsSubtitle: string;
+    newsCountLabel: string;
     signalsTitle: string;
     signalsSubtitle: string;
+    signalsCountLabel: string;
     pointsLabel: string;
     commentsLabel: string;
     noSignals: string;
     noNews: string;
     sourceFilterTitle: string;
     sourceFilterHint: string;
+    chinaGroupLabel: string;
+    globalGroupLabel: string;
     selectAllSources: string;
     clearSources: string;
     sourceCountLabel: string;
@@ -71,16 +77,22 @@ const COPY: Record<
       "A lightweight trading dashboard that keeps headlines and signals in separate lanes, so the page stays readable at a glance.",
     refreshing: "Refreshing",
     upToDate: "Up to date",
+    adminLabel: "Admin",
+    adminAriaLabel: "Go to admin console",
     newsTitle: "🌍 Global News",
     newsSubtitle: "Live feed refreshed every 5 seconds",
+    newsCountLabel: "items",
     signalsTitle: "📈 Investment Signals",
     signalsSubtitle: "Signals inferred from the headlines above",
+    signalsCountLabel: "signals",
     pointsLabel: "points",
     commentsLabel: "comments",
     noSignals: "No signals generated from current news",
     noNews: "No news matches the selected sources",
     sourceFilterTitle: "News sources",
     sourceFilterHint: "Search, group, and pick one or more feeds to focus the list.",
+    chinaGroupLabel: "China",
+    globalGroupLabel: "Global",
     selectAllSources: "Select all",
     clearSources: "Clear",
     sourceCountLabel: "sources",
@@ -93,16 +105,22 @@ const COPY: Record<
       "一个轻量化的交易看板，把新闻标题和信号分开呈现，让信息一眼就能看清。",
     refreshing: "刷新中",
     upToDate: "已更新",
+    adminLabel: "管理台",
+    adminAriaLabel: "进入管理台",
     newsTitle: "🌍 全球新闻",
     newsSubtitle: "每 5 秒刷新一次",
+    newsCountLabel: "条",
     signalsTitle: "📈 投资信号",
     signalsSubtitle: "根据上方新闻自动生成信号",
+    signalsCountLabel: "条信号",
     pointsLabel: "热度",
     commentsLabel: "评论",
     noSignals: "当前新闻暂无可生成的信号",
     noNews: "当前所选来源暂无新闻",
     sourceFilterTitle: "新闻来源",
     sourceFilterHint: "可搜索、分组，并勾选一个或多个来源来聚焦新闻列表。",
+    chinaGroupLabel: "中国",
+    globalGroupLabel: "国际",
     selectAllSources: "全选",
     clearSources: "清空",
     sourceCountLabel: "个来源",
@@ -123,6 +141,11 @@ export default function Home() {
   const [sourcePrefsLoaded, setSourcePrefsLoaded] = useState(false);
   const isZh = lang === "zh";
   const ui = COPY[lang];
+  const numberFormatter = new Intl.NumberFormat(isZh ? "zh-CN" : "en-US");
+  const langSwapStyle = {
+    animation: "lang-swap 180ms ease",
+    willChange: "opacity, transform",
+  } as const;
   const availableSources = Array.from(new Set(news.map((item) => item.source)));
   const sourceSearchTerm = sourceSearch.trim().toLowerCase();
   const sourceCounts = news.reduce<Record<string, number>>((acc, item) => {
@@ -157,6 +180,45 @@ export default function Home() {
 
     return `${source.slice(0, 31)}...`;
   }
+
+  function formatRelativeAge(item: NewsItem) {
+    if (item.publishedAt) {
+      const publishedAt = new Date(item.publishedAt);
+      if (!Number.isNaN(publishedAt.getTime())) {
+        const diffMinutes = Math.max(1, Math.floor((Date.now() - publishedAt.getTime()) / 60000));
+
+        if (diffMinutes < 60) {
+          return isZh ? `${diffMinutes} 分钟前` : `${diffMinutes}m ago`;
+        }
+
+        const diffHours = Math.floor(diffMinutes / 60);
+        if (diffHours < 24) {
+          return isZh ? `${diffHours} 小时前` : `${diffHours}h ago`;
+        }
+
+        const diffDays = Math.floor(diffHours / 24);
+        return isZh ? `${diffDays} 天前` : `${diffDays}d ago`;
+      }
+    }
+
+    const match = item.age.match(/^(\d+)([mhd]) ago$/i);
+    if (match) {
+      const value = Number(match[1]);
+      const unit = match[2].toLowerCase();
+
+      if (isZh) {
+        if (unit === "m") return `${value} 分钟前`;
+        if (unit === "h") return `${value} 小时前`;
+        return `${value} 天前`;
+      }
+    }
+
+    return item.age;
+  }
+
+  useEffect(() => {
+    document.documentElement.lang = isZh ? "zh-CN" : "en";
+  }, [isZh]);
 
   useEffect(() => {
     try {
@@ -454,10 +516,10 @@ export default function Home() {
                 flexShrink: 0,
                 boxShadow: "0 8px 30px rgba(15, 23, 42, 0.04)",
               }}
-              aria-label="Go to admin console"
-              title="管理台"
+              aria-label={ui.adminAriaLabel}
+              title={ui.adminLabel}
             >
-              管理台
+              {ui.adminLabel}
             </a>
             <button
               type="button"
@@ -512,16 +574,16 @@ export default function Home() {
           }}
         >
           <div
-          style={{
-            marginBottom: 14,
-            display: "flex",
-            alignItems: "flex-end",
-            justifyContent: "space-between",
+            style={{
+              marginBottom: 14,
+              display: "flex",
+              alignItems: "flex-end",
+              justifyContent: "space-between",
               gap: 10,
               flexWrap: "wrap",
             }}
           >
-            <div style={{ minHeight: 62, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+            <div key={`${lang}-news-heading`} style={{ ...langSwapStyle, minHeight: 62, display: "flex", flexDirection: "column", justifyContent: "center" }}>
               <h2 style={{ margin: 0, fontSize: 20, color: "#0f172a", fontWeight: 800, lineHeight: 1.2 }}>
                 {ui.newsTitle}
               </h2>
@@ -529,8 +591,8 @@ export default function Home() {
                 {ui.newsSubtitle}
               </div>
             </div>
-            <div style={{ fontSize: 11, color: "#64748b", whiteSpace: "nowrap", minWidth: 72, textAlign: "right" }}>
-              {visibleNews.length} items
+            <div style={{ fontSize: 11, color: "#64748b", whiteSpace: "nowrap", minWidth: 88, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
+              {numberFormatter.format(visibleNews.length)} {ui.newsCountLabel}
             </div>
           </div>
 
@@ -553,14 +615,14 @@ export default function Home() {
                 minHeight: 42,
               }}
             >
-              <div style={{ fontSize: 11, color: "#64748b", lineHeight: 1.35, minWidth: 0, flex: "1 1 260px" }}>
+              <div key={`${lang}-source-copy`} className="lang-swap" style={{ fontSize: 11, color: "#64748b", lineHeight: 1.35, minWidth: 0, flex: "1 1 260px" }}>
                 <div style={{ fontWeight: 700, color: "#0f172a", marginBottom: 2 }}>{ui.sourceFilterTitle}</div>
                 <div>{ui.sourceFilterHint}</div>
               </div>
-              <div style={{ fontSize: 11, color: "#64748b", whiteSpace: "nowrap" }}>
+              <div style={{ fontSize: 11, color: "#64748b", whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>
                 {sourceMode === "all"
-                  ? `${availableSources.length} ${ui.sourceCountLabel}`
-                  : `${selectedSources.length}/${availableSources.length} ${ui.sourceCountLabel}`}
+                  ? `${numberFormatter.format(availableSources.length)} ${ui.sourceCountLabel}`
+                  : `${numberFormatter.format(selectedSources.length)}/${numberFormatter.format(availableSources.length)} ${ui.sourceCountLabel}`}
               </div>
             </div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
@@ -595,7 +657,7 @@ export default function Home() {
                   fontWeight: 600,
                 }}
               >
-                中国 {groupedSources.china.length}
+                {ui.chinaGroupLabel} {groupedSources.china.length}
               </button>
               <button
                 type="button"
@@ -612,7 +674,7 @@ export default function Home() {
                   fontWeight: 600,
                 }}
               >
-                国际 {groupedSources.global.length}
+                {ui.globalGroupLabel} {groupedSources.global.length}
               </button>
               <button
                 type="button"
@@ -700,7 +762,7 @@ export default function Home() {
                         fontWeight: 700,
                       }}
                     >
-                      {sourceCounts[source] || 0}
+                      {numberFormatter.format(sourceCounts[source] || 0)}
                     </span>
                   </label>
                 );
@@ -804,7 +866,7 @@ export default function Home() {
                       fontSize: 11,
                     }}
                   >
-                    {n.age}
+                    {formatRelativeAge(n)}
                   </span>
                 </div>
                 <div
@@ -818,10 +880,10 @@ export default function Home() {
                   }}
                 >
                   <span>
-                    {n.points} {ui.pointsLabel}
+                    {numberFormatter.format(n.points)} {ui.pointsLabel}
                   </span>
                   <span>
-                    {n.comments} {ui.commentsLabel}
+                    {numberFormatter.format(n.comments)} {ui.commentsLabel}
                   </span>
                 </div>
                 <div
@@ -882,7 +944,7 @@ export default function Home() {
               flexWrap: "wrap",
             }}
           >
-            <div>
+            <div key={`${lang}-signals-heading`} className="lang-swap">
               <h2 style={{ margin: 0, fontSize: 18, color: "#0f172a", fontWeight: 800, lineHeight: 1.2 }}>
                 {ui.signalsTitle}
               </h2>
@@ -890,7 +952,9 @@ export default function Home() {
                 {ui.signalsSubtitle}
               </div>
             </div>
-            <div style={{ fontSize: 11, color: "#64748b" }}>{signals.length} signals</div>
+            <div style={{ fontSize: 11, color: "#64748b", whiteSpace: "nowrap", minWidth: 88, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
+              {numberFormatter.format(signals.length)} {ui.signalsCountLabel}
+            </div>
           </div>
 
           <div style={{ overflowY: "auto", flex: 1, minHeight: 0 }}>
