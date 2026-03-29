@@ -38,6 +38,9 @@ type ThresholdItem = {
   direction: "above" | "below";
   unit: string;
   note: string;
+  marketSymbol: string;
+  priority: "P0" | "P1" | "P2";
+  tags: string[];
   updatedAt: string;
 };
 
@@ -69,6 +72,12 @@ const THRESHOLD_CATEGORY_LABELS: Record<ThresholdItem["category"], string> = {
   macro: "宏观",
 };
 
+const THRESHOLD_PRIORITY_LABELS: Record<ThresholdItem["priority"], string> = {
+  P0: "核心",
+  P1: "重点",
+  P2: "观察",
+};
+
 function getThresholdStatus(item: ThresholdItem) {
   const triggered = item.direction === "above" ? item.currentValue >= item.thresholdValue : item.currentValue <= item.thresholdValue;
   const distance = item.direction === "above" ? item.currentValue - item.thresholdValue : item.thresholdValue - item.currentValue;
@@ -85,6 +94,23 @@ function formatNumber(value: number) {
   return new Intl.NumberFormat("en-US", {
     maximumFractionDigits: value % 1 === 0 ? 0 : 2,
   }).format(value);
+}
+
+function normalizeThresholdItem(item: Partial<ThresholdItem> & { symbol: string; name: string }): ThresholdItem {
+  return {
+    symbol: item.symbol,
+    name: item.name,
+    category: item.category || "stock",
+    currentValue: Number.isFinite(Number(item.currentValue)) ? Number(item.currentValue) : 0,
+    thresholdValue: Number.isFinite(Number(item.thresholdValue)) ? Number(item.thresholdValue) : 0,
+    direction: item.direction === "below" ? "below" : "above",
+    unit: item.unit || "USD",
+    note: item.note || "",
+    marketSymbol: item.marketSymbol || item.symbol,
+    priority: item.priority === "P0" || item.priority === "P2" ? item.priority : "P1",
+    tags: Array.isArray(item.tags) ? item.tags.filter((tag): tag is string => typeof tag === "string") : [],
+    updatedAt: item.updatedAt || new Date().toISOString(),
+  };
 }
 
 const COPY: Record<
@@ -388,7 +414,7 @@ export default function Home() {
               && typeof item === "object"
               && typeof (item as ThresholdItem).symbol === "string"
               && typeof (item as ThresholdItem).name === "string",
-          ),
+          ).map((item) => normalizeThresholdItem(item)),
         );
       }
     } catch {
@@ -568,9 +594,11 @@ export default function Home() {
         }
 
         setThresholds(
-          nextThresholds.filter((item: unknown): item is ThresholdItem => {
-            return Boolean(item) && typeof item === "object" && typeof (item as ThresholdItem).symbol === "string" && typeof (item as ThresholdItem).name === "string";
-          }),
+          nextThresholds
+            .filter((item: unknown): item is ThresholdItem => {
+              return Boolean(item) && typeof item === "object" && typeof (item as ThresholdItem).symbol === "string" && typeof (item as ThresholdItem).name === "string";
+            })
+            .map((item) => normalizeThresholdItem(item)),
         );
 
         if ([50, 100, 200].includes(nextNewsLimit)) {
@@ -1340,9 +1368,23 @@ export default function Home() {
                     >
                       <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center" }}>
                         <div style={{ minWidth: 0 }}>
-                          <div style={{ fontWeight: 800, color: "#0f172a", fontSize: 13 }}>{item.symbol}</div>
+                          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+                            <div style={{ fontWeight: 800, color: "#0f172a", fontSize: 13 }}>{item.symbol}</div>
+                            <span
+                              style={{
+                                padding: "3px 8px",
+                                borderRadius: 999,
+                                backgroundColor: "rgba(15,23,42,0.06)",
+                                color: "#475569",
+                                fontSize: 10,
+                                fontWeight: 800,
+                              }}
+                            >
+                              {THRESHOLD_PRIORITY_LABELS[item.priority]}
+                            </span>
+                          </div>
                           <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>
-                            {item.name} · {THRESHOLD_CATEGORY_LABELS[item.category]}
+                            {item.name} · {THRESHOLD_CATEGORY_LABELS[item.category]}{item.marketSymbol ? ` · ${item.marketSymbol}` : ""}
                           </div>
                         </div>
                         <span
@@ -1367,6 +1409,25 @@ export default function Home() {
                           {status.distance >= 0 ? "+" : ""}
                           {formatNumber(status.distance)} ({status.percent.toFixed(1)}%)
                         </span>
+                        {item.tags.length > 0 && (
+                          <span style={{ display: "inline-flex", gap: 6, flexWrap: "wrap" }}>
+                            {item.tags.slice(0, 3).map((tag) => (
+                              <span
+                                key={tag}
+                                style={{
+                                  padding: "3px 8px",
+                                  borderRadius: 999,
+                                  backgroundColor: "rgba(59,130,246,0.08)",
+                                  color: "#1d4ed8",
+                                  fontSize: 10,
+                                  fontWeight: 800,
+                                }}
+                              >
+                                #{tag}
+                              </span>
+                            ))}
+                          </span>
+                        )}
                       </div>
                       <div style={{ fontSize: 11, color: "#475569", lineHeight: 1.4 }}>{item.note}</div>
                     </div>
@@ -1493,6 +1554,9 @@ export default function Home() {
                           {formatNumber(thresholdStatus.distance)} ({thresholdStatus.percent.toFixed(1)}%)
                         </span>
                         <span>{THRESHOLD_CATEGORY_LABELS[matchedThreshold.category]}</span>
+                        <span>{THRESHOLD_PRIORITY_LABELS[matchedThreshold.priority]}</span>
+                        <span>{matchedThreshold.marketSymbol}</span>
+                        {matchedThreshold.tags.length > 0 && <span>{matchedThreshold.tags.slice(0, 2).map((tag) => `#${tag}`).join(" · ")}</span>}
                       </div>
                     </div>
                   )}
