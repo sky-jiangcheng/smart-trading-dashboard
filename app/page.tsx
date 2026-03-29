@@ -407,15 +407,14 @@ export default function Home() {
       }
 
       if (Array.isArray(parsed.thresholds)) {
-        setThresholds(
-          parsed.thresholds.filter(
-            (item: unknown): item is ThresholdItem =>
-              Boolean(item)
-              && typeof item === "object"
-              && typeof (item as ThresholdItem).symbol === "string"
-              && typeof (item as ThresholdItem).name === "string",
-          ).map((item) => normalizeThresholdItem(item)),
+        const restoredThresholds = parsed.thresholds.filter(
+          (item: unknown): item is ThresholdItem =>
+            Boolean(item)
+            && typeof item === "object"
+            && typeof (item as ThresholdItem).symbol === "string"
+            && typeof (item as ThresholdItem).name === "string",
         );
+        setThresholds(restoredThresholds.map((item: ThresholdItem) => normalizeThresholdItem(item)));
       }
     } catch {
       // Ignore malformed cache entries.
@@ -593,13 +592,12 @@ export default function Home() {
           );
         }
 
-        setThresholds(
-          nextThresholds
-            .filter((item: unknown): item is ThresholdItem => {
-              return Boolean(item) && typeof item === "object" && typeof (item as ThresholdItem).symbol === "string" && typeof (item as ThresholdItem).name === "string";
-            })
-            .map((item) => normalizeThresholdItem(item)),
+        const normalizedThresholds = nextThresholds.filter(
+          (item: unknown): item is ThresholdItem => {
+            return Boolean(item) && typeof item === "object" && typeof (item as ThresholdItem).symbol === "string" && typeof (item as ThresholdItem).name === "string";
+          },
         );
+        setThresholds(normalizedThresholds.map((item: ThresholdItem) => normalizeThresholdItem(item)));
 
         if ([50, 100, 200].includes(nextNewsLimit)) {
           setNewsLimit(nextNewsLimit);
