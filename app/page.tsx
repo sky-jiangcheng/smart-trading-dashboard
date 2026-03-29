@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { config } from "../../lib/config";
 
 type NewsItem = {
   id: string;
@@ -221,6 +222,24 @@ export default function Home() {
                 {isRefreshing ? ui.refreshing : ui.upToDate}
               </span>
             </div>
+            <button
+              type="button"
+              onClick={() => window.location.href = config.adminUrl}
+              style={{
+                border: "1px solid #d0d0c8",
+                backgroundColor: "#ffffff",
+                color: "#000000",
+                borderRadius: 999,
+                padding: "6px 10px",
+                fontSize: 11,
+                fontWeight: 600,
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+              }}
+              aria-label="Go to admin console"
+            >
+              管理台
+            </button>
             <button
               type="button"
               onClick={() => setLang((current) => (current === "en" ? "zh" : "en"))}

@@ -1,36 +1,104 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Investment Dashboard
 
-## Getting Started
+智能交易空间 - 实时市场新闻和投资信号看板。
 
-First, run the development server:
+## 功能特性
+
+- 📰 **实时新闻聚合** - 从多个 RSS 源获取市场新闻
+- 📊 **智能信号生成** - 基于新闻内容自动生成投资信号
+- 🌐 **多语言支持** - 中英文界面切换
+- 🔄 **自动刷新** - 每 5 秒自动更新数据
+- 🛠️ **管理台集成** - 一键跳转到管理控制台
+
+## 技术栈
+
+- **Framework**: Next.js 16
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS + 内联样式
+- **API**: RESTful 接口调用
+
+## 快速开始
+
+### 环境要求
+
+- Node.js 18+
+- npm 或 yarn
+
+### 安装依赖
+
+```bash
+npm install
+```
+
+### 开发模式
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+应用将在 `http://localhost:3000` 启动
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 生产构建
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build
+npm start
+```
 
-## Learn More
+## 配置说明
 
-To learn more about Next.js, take a look at the following resources:
+### 环境变量
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+创建 `.env.local` 文件来配置以下环境变量：
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+# 管理台 URL
+NEXT_PUBLIC_ADMIN_URL=https://smart-trading-admin.vercel.app
 
-## Deploy on Vercel
+# API 基础 URL
+NEXT_PUBLIC_API_URL=https://smart-trading-api.vercel.app
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+如果不设置，将使用默认值。
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### 默认配置
+
+- **管理台 URL**: `https://smart-trading-admin.vercel.app`
+- **API URL**: `https://smart-trading-api.vercel.app`
+
+## 项目结构
+
+```
+investment-dashboard/
+├── app/
+│   ├── layout.tsx      # 根布局
+│   ├── page.tsx        # 主页面
+│   └── globals.css     # 全局样式
+├── lib/
+│   └── config.ts       # 配置文件
+├── package.json        # 项目配置
+├── next.config.ts      # Next.js 配置
+├── tsconfig.json       # TypeScript 配置
+└── README.md           # 项目文档
+```
+
+## 部署
+
+### Vercel 部署
+
+1. 连接 GitHub 仓库
+2. 设置环境变量（可选）
+3. 部署完成
+
+### 其他平台
+
+参考 Next.js 官方部署文档：[Next.js Deployment](https://nextjs.org/docs/app/building-your-application/deploying)
+
+## 相关项目
+
+- [investment-admin](https://github.com/sky-jiangcheng/smart-trading-admin) - 管理控制台
+- [investment-api](https://github.com/sky-jiangcheng/smart-trading-api) - 后端 API 服务
+
+## 许可证
+
+MIT License
