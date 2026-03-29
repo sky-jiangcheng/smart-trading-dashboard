@@ -22,12 +22,72 @@ type SignalItem = {
   reason: string;
 };
 
+type Lang = "en" | "zh";
+
+const COPY: Record<
+  Lang,
+  {
+    headerTag: string;
+    headerTitle: string;
+    headerDescription: string;
+    refreshing: string;
+    upToDate: string;
+    newsTitle: string;
+    newsSubtitle: string;
+    signalsTitle: string;
+    signalsSubtitle: string;
+    pointsLabel: string;
+    commentsLabel: string;
+    noSignals: string;
+    toggleLabel: string;
+  }
+> = {
+  en: {
+    headerTag: "Smart Trading Space",
+    headerTitle: "Live market news and signals",
+    headerDescription:
+      "A lightweight trading dashboard that keeps headlines and signals in separate lanes, so the page stays readable at a glance.",
+    refreshing: "Refreshing",
+    upToDate: "Up to date",
+    newsTitle: "🌍 Global News",
+    newsSubtitle: "Live feed refreshed every 5 seconds",
+    signalsTitle: "📈 Investment Signals",
+    signalsSubtitle: "Signals inferred from the headlines above",
+    pointsLabel: "points",
+    commentsLabel: "comments",
+    noSignals: "No signals generated from current news",
+    toggleLabel: "中文",
+  },
+  zh: {
+    headerTag: "Smart Trading Space",
+    headerTitle: "实时市场新闻与信号",
+    headerDescription:
+      "一个轻量化的交易看板，把新闻标题和信号分开呈现，让信息一眼就能看清。",
+    refreshing: "刷新中",
+    upToDate: "已更新",
+    newsTitle: "🌍 全球新闻",
+    newsSubtitle: "每 5 秒刷新一次",
+    signalsTitle: "📈 投资信号",
+    signalsSubtitle: "根据上方新闻自动生成信号",
+    pointsLabel: "热度",
+    commentsLabel: "评论",
+    noSignals: "当前新闻暂无可生成的信号",
+    toggleLabel: "EN",
+  },
+};
+
 export default function Home() {
   const [news, setNews] = useState<NewsItem[]>([]);
   const [signals, setSignals] = useState<SignalItem[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(true);
+  const [lang, setLang] = useState<Lang>("en");
   const newsRef = useRef<NewsItem[]>([]);
   const signalsRef = useRef<SignalItem[]>([]);
+  const ui = COPY[lang];
+
+  useEffect(() => {
+    document.documentElement.lang = lang;
+  }, [lang]);
 
   useEffect(() => {
     newsRef.current = news;
@@ -100,7 +160,7 @@ export default function Home() {
           position: "sticky",
           top: 0,
           zIndex: 10,
-          padding: "20px 20px 14px",
+          padding: "12px 16px 10px",
           borderBottom: "1px solid #dcdcdc",
           backgroundColor: "#f6f6ef",
         }}
@@ -117,40 +177,68 @@ export default function Home() {
           <div>
             <div
               style={{
-                fontSize: 12,
+                fontSize: 10,
                 letterSpacing: "0.12em",
                 textTransform: "uppercase",
                 color: "#666666",
-                marginBottom: 6,
+                marginBottom: 4,
               }}
             >
-              Smart Trading Space
+              {ui.headerTag}
             </div>
             <h1
               style={{
                 margin: 0,
-                fontSize: 26,
+                fontSize: 22,
                 lineHeight: 1.1,
                 color: "#000000",
                 fontWeight: 700,
               }}
             >
-              Live market news and signals
+              {ui.headerTitle}
             </h1>
           </div>
           <div
             style={{
-              maxWidth: 380,
-              fontSize: 12,
-              lineHeight: 1.5,
-              color: "#666666",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "flex-end",
+              gap: 10,
+              flexWrap: "wrap",
+              maxWidth: 390,
             }}
           >
-            A lightweight trading dashboard that keeps headlines and signals in
-            separate lanes, so the page stays readable at a glance.
-            <span style={{ marginLeft: 8, color: "#999999" }}>
-              {isRefreshing ? "Refreshing" : "Up to date"}
-            </span>
+            <div
+              style={{
+                fontSize: 11,
+                lineHeight: 1.35,
+                color: "#666666",
+                maxWidth: 300,
+              }}
+            >
+              {ui.headerDescription}
+              <span style={{ marginLeft: 8, color: "#999999" }}>
+                {isRefreshing ? ui.refreshing : ui.upToDate}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setLang((current) => (current === "en" ? "zh" : "en"))}
+              style={{
+                border: "1px solid #d0d0c8",
+                backgroundColor: "#f6f6ef",
+                color: "#000000",
+                borderRadius: 999,
+                padding: "6px 10px",
+                fontSize: 11,
+                fontWeight: 600,
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+              }}
+              aria-label={`Switch language to ${ui.toggleLabel}`}
+            >
+              {ui.toggleLabel}
+            </button>
           </div>
         </div>
       </header>
@@ -178,12 +266,20 @@ export default function Home() {
             minHeight: 0,
           }}
         >
-          <div style={{ marginBottom: 16 }}>
-            <h2 style={{ margin: 0, fontSize: 18, color: "#000000", fontWeight: "bold" }}>
-              🌍 Global News
+          <div
+            style={{
+              marginBottom: 12,
+              display: "flex",
+              alignItems: "baseline",
+              gap: 10,
+              flexWrap: "wrap",
+            }}
+          >
+            <h2 style={{ margin: 0, fontSize: 18, color: "#000000", fontWeight: "bold", lineHeight: 1.2 }}>
+              {ui.newsTitle}
             </h2>
-            <div style={{ marginTop: 4, fontSize: 11, color: "#666666" }}>
-              Live feed refreshed every 5 seconds
+            <div style={{ fontSize: 11, color: "#666666", lineHeight: 1.2 }}>
+              {ui.newsSubtitle}
             </div>
           </div>
 
@@ -232,8 +328,12 @@ export default function Home() {
                     color: "#666666",
                   }}
                 >
-                  <span>{n.points} points</span>
-                  <span>{n.comments} comments</span>
+                  <span>
+                    {n.points} {ui.pointsLabel}
+                  </span>
+                  <span>
+                    {n.comments} {ui.commentsLabel}
+                  </span>
                 </div>
                 <div
                   style={{
@@ -255,19 +355,27 @@ export default function Home() {
           style={{
             flex: 1,
             minWidth: 0,
-            padding: 16,
+            padding: 12,
             backgroundColor: "#f6f6ef",
             display: "flex",
             flexDirection: "column",
             minHeight: 0,
           }}
         >
-          <div style={{ marginBottom: 16 }}>
-            <h2 style={{ margin: 0, fontSize: 18, color: "#000000", fontWeight: "bold" }}>
-              📈 Investment Signals
+          <div
+            style={{
+              marginBottom: 12,
+              display: "flex",
+              alignItems: "baseline",
+              gap: 10,
+              flexWrap: "wrap",
+            }}
+          >
+            <h2 style={{ margin: 0, fontSize: 16, color: "#000000", fontWeight: "bold", lineHeight: 1.2 }}>
+              {ui.signalsTitle}
             </h2>
-            <div style={{ marginTop: 4, fontSize: 11, color: "#666666" }}>
-              Signals inferred from the headlines above
+            <div style={{ fontSize: 10, color: "#666666", lineHeight: 1.2 }}>
+              {ui.signalsSubtitle}
             </div>
           </div>
 
@@ -296,8 +404,8 @@ export default function Home() {
                 <div
                   key={s.asset}
                   style={{
-                    marginBottom: 12,
-                    padding: "12px 0",
+                    marginBottom: 8,
+                    padding: "9px 0",
                     borderBottom: i === signals.length - 1 ? "none" : "1px dashed #cccccc",
                   }}
                 >
@@ -309,39 +417,45 @@ export default function Home() {
                       gap: 12,
                     }}
                   >
-                    <span style={{ fontWeight: 600, color: "#000000", fontSize: 14 }}>{s.asset}</span>
+                    <span style={{ fontWeight: 600, color: "#000000", fontSize: 13 }}>{s.asset}</span>
                     <span
                       style={{
                         padding: "2px 6px",
                         borderRadius: 3,
                         backgroundColor: color.text,
                         color: "white",
-                        fontSize: 10,
+                        fontSize: 9,
                         fontWeight: 600,
                         letterSpacing: "0.5px",
                         whiteSpace: "nowrap",
                       }}
                     >
-                      {s.direction.toUpperCase()}
+                      {lang === "zh"
+                        ? s.direction === "bullish"
+                          ? "看涨"
+                          : s.direction === "bearish"
+                            ? "看跌"
+                            : "中性"
+                        : s.direction.toUpperCase()}
                     </span>
                   </div>
-                  <div style={{ color: "#666666", marginTop: 4, fontSize: 12, lineHeight: 1.4 }}>{s.reason}</div>
+                  <div style={{ color: "#666666", marginTop: 4, fontSize: 11, lineHeight: 1.35 }}>{s.reason}</div>
                 </div>
               );
             })}
             {signals.length === 0 && (
               <div
                 style={{
-                  padding: 20,
+                  padding: 14,
                   textAlign: "center",
                   color: "#666666",
                   fontStyle: "italic",
                   border: "1px dashed #cccccc",
                   borderRadius: 4,
-                  fontSize: 12,
+                  fontSize: 11,
                 }}
               >
-                No signals generated from current news
+                {ui.noSignals}
               </div>
             )}
           </div>
