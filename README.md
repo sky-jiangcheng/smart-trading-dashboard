@@ -63,7 +63,7 @@ NEXT_PUBLIC_API_URL=https://smart-trading-api.vercel.app
 
 ### 默认配置
 
-- **管理台 URL**: `https://smart-trading-admin.vercel.app`
+- **管理台 URL**: `https://smart-trading-admin.vercel.app`（board 默认跳转到线上 admin）
 - **API URL**: `https://smart-trading-api.vercel.app`
 
 ## 项目结构

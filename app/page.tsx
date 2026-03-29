@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { config } from "../../lib/config";
+import { config } from "../lib/config";
 
 type NewsItem = {
   id: string;
@@ -205,20 +205,25 @@ export default function Home() {
               alignItems: "center",
               justifyContent: "flex-end",
               gap: 10,
-              flexWrap: "wrap",
-              maxWidth: 390,
+              flexWrap: "nowrap",
+              flex: "1 1 360px",
+              minWidth: 0,
             }}
           >
             <div
               style={{
+                flex: "1 1 auto",
                 fontSize: 11,
                 lineHeight: 1.35,
                 color: "#666666",
-                maxWidth: 300,
+                minWidth: 0,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
               }}
             >
-              {ui.headerDescription}
-              <span style={{ marginLeft: 8, color: "#999999" }}>
+              <span>{ui.headerDescription}</span>
+              <span style={{ marginLeft: 8, color: "#999999", flexShrink: 0 }}>
                 {isRefreshing ? ui.refreshing : ui.upToDate}
               </span>
             </div>
@@ -238,6 +243,7 @@ export default function Home() {
                 cursor: "pointer",
                 whiteSpace: "nowrap",
                 textDecoration: "none",
+                flexShrink: 0,
               }}
               aria-label="Go to admin console"
               title="管理台"
@@ -257,6 +263,7 @@ export default function Home() {
                 fontWeight: 600,
                 cursor: "pointer",
                 whiteSpace: "nowrap",
+                flexShrink: 0,
               }}
               aria-label={`Switch language to ${ui.toggleLabel}`}
             >
