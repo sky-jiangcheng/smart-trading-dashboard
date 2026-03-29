@@ -29,6 +29,18 @@ type SourceItem = {
   label: string;
 };
 
+type ThresholdItem = {
+  symbol: string;
+  name: string;
+  category: "stock" | "currency" | "futures" | "crypto" | "macro";
+  currentValue: number;
+  thresholdValue: number;
+  direction: "above" | "below";
+  unit: string;
+  note: string;
+  updatedAt: string;
+};
+
 type Lang = "en" | "zh";
 
 const SOURCE_STORAGE_KEY = "investment-dashboard:selected-sources";
@@ -47,6 +59,32 @@ const SOURCE_LABEL_OVERRIDES: Array<[RegExp, string]> = [
 
 function isChineseSource(source: string) {
   return /[\u4e00-\u9fff]/.test(source) || /中国|人民网|中国日报|中国新闻网|财联社|澎湃|新华|36kr/i.test(source);
+}
+
+const THRESHOLD_CATEGORY_LABELS: Record<ThresholdItem["category"], string> = {
+  stock: "股票",
+  currency: "货币",
+  futures: "期货",
+  crypto: "加密货币",
+  macro: "宏观",
+};
+
+function getThresholdStatus(item: ThresholdItem) {
+  const triggered = item.direction === "above" ? item.currentValue >= item.thresholdValue : item.currentValue <= item.thresholdValue;
+  const distance = item.direction === "above" ? item.currentValue - item.thresholdValue : item.thresholdValue - item.currentValue;
+  const percent = item.thresholdValue === 0 ? 0 : (distance / Math.abs(item.thresholdValue)) * 100;
+
+  return {
+    triggered,
+    distance,
+    percent,
+  };
+}
+
+function formatNumber(value: number) {
+  return new Intl.NumberFormat("en-US", {
+    maximumFractionDigits: value % 1 === 0 ? 0 : 2,
+  }).format(value);
 }
 
 const COPY: Record<
@@ -147,6 +185,7 @@ export default function Home() {
   const [news, setNews] = useState<NewsItem[]>([]);
   const [signals, setSignals] = useState<SignalItem[]>([]);
   const [sourceCatalog, setSourceCatalog] = useState<SourceItem[]>([]);
+  const [thresholds, setThresholds] = useState<ThresholdItem[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(true);
   const [newsLimit, setNewsLimit] = useState<number>(200);
   const [lang, setLang] = useState<Lang>("en");
@@ -155,6 +194,7 @@ export default function Home() {
   const [sourceSearch, setSourceSearch] = useState("");
   const newsRef = useRef<NewsItem[]>([]);
   const signalsRef = useRef<SignalItem[]>([]);
+  const thresholdsRef = useRef<ThresholdItem[]>([]);
   const [sourcePrefsLoaded, setSourcePrefsLoaded] = useState(false);
   const isZh = lang === "zh";
   const ui = COPY[lang];
@@ -294,6 +334,19 @@ export default function Home() {
     return item.age;
   }
 
+  function findThresholdForSignal(asset: string) {
+    const normalized = asset.toLowerCase();
+
+    return thresholds.find((item) => {
+      const haystack = `${item.symbol} ${item.name} ${item.category}`.toLowerCase();
+      return (
+        haystack.includes(normalized) ||
+        normalized.includes(item.symbol.toLowerCase()) ||
+        normalized.includes(item.name.toLowerCase())
+      );
+    });
+  }
+
   function hydrateCachedData() {
     try {
       const cached = window.localStorage.getItem(DATA_CACHE_KEY);
@@ -323,6 +376,18 @@ export default function Home() {
           parsed.sourceCatalog.filter(
             (item: unknown): item is SourceItem =>
               Boolean(item) && typeof item === "object" && typeof (item as SourceItem).url === "string" && typeof (item as SourceItem).label === "string",
+          ),
+        );
+      }
+
+      if (Array.isArray(parsed.thresholds)) {
+        setThresholds(
+          parsed.thresholds.filter(
+            (item: unknown): item is ThresholdItem =>
+              Boolean(item)
+              && typeof item === "object"
+              && typeof (item as ThresholdItem).symbol === "string"
+              && typeof (item as ThresholdItem).name === "string",
           ),
         );
       }
@@ -410,6 +475,10 @@ export default function Home() {
   }, [signals]);
 
   useEffect(() => {
+    thresholdsRef.current = thresholds;
+  }, [thresholds]);
+
+  useEffect(() => {
     if (availableSources.length === 0) {
       return;
     }
@@ -456,17 +525,19 @@ export default function Home() {
       setIsRefreshing(true);
 
       try {
-        const [newsRes, signalsRes, sourcesRes, settingsRes] = await Promise.all([
+        const [newsRes, signalsRes, sourcesRes, thresholdsRes, settingsRes] = await Promise.all([
           fetch(`${config.apiUrl}/news`),
           fetch(`${config.apiUrl}/signals`),
           fetch(`${config.apiUrl}/sources`),
+          fetch(`${config.apiUrl}/thresholds`),
           fetch(`${config.apiUrl}/settings`),
         ]);
 
-        const [newsData, signalData, sourceData, settingsData] = await Promise.all([
+        const [newsData, signalData, sourceData, thresholdData, settingsData] = await Promise.all([
           newsRes.json(),
           signalsRes.json(),
           sourcesRes.json(),
+          thresholdsRes.json(),
           settingsRes.json(),
         ]);
 
@@ -477,6 +548,7 @@ export default function Home() {
         const nextNews = Array.isArray(newsData) ? newsData : [];
         const nextSignals = Array.isArray(signalData) ? signalData : [];
         const nextSources = Array.isArray(sourceData?.sources) ? sourceData.sources : [];
+        const nextThresholds = Array.isArray(thresholdData?.thresholds) ? thresholdData.thresholds : [];
         const nextNewsLimit = Number(settingsData?.newsLimit);
 
         if (nextNews.length > 0 || newsRef.current.length === 0) {
@@ -495,6 +567,12 @@ export default function Home() {
           );
         }
 
+        setThresholds(
+          nextThresholds.filter((item: unknown): item is ThresholdItem => {
+            return Boolean(item) && typeof item === "object" && typeof (item as ThresholdItem).symbol === "string" && typeof (item as ThresholdItem).name === "string";
+          }),
+        );
+
         if ([50, 100, 200].includes(nextNewsLimit)) {
           setNewsLimit(nextNewsLimit);
         }
@@ -507,6 +585,7 @@ export default function Home() {
               news: nextNews,
               signals: nextSignals,
               sourceCatalog: nextSources,
+              thresholds: nextThresholds,
             }),
           );
         } catch {
@@ -1221,6 +1300,96 @@ export default function Home() {
           </div>
 
           <div style={{ overflowY: "auto", flex: 1, minHeight: 0 }}>
+            <div
+              style={{
+                marginBottom: 12,
+                padding: 12,
+                borderRadius: 16,
+                border: "1px solid rgba(15,23,42,0.08)",
+                backgroundColor: "rgba(248,250,252,0.9)",
+                display: "grid",
+                gap: 10,
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: "#0f172a" }}>阈值解释层</div>
+                  <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>
+                    股票、货币、期货等当前值与阈值一起展示，便于理解信号为什么成立。
+                  </div>
+                </div>
+                <div style={{ fontSize: 11, color: "#64748b", fontVariantNumeric: "tabular-nums" }}>
+                  {formatNumber(thresholds.length)} thresholds
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 8 }}>
+                {thresholds.map((item) => {
+                  const status = getThresholdStatus(item);
+                  return (
+                    <div
+                      key={`${item.category}-${item.symbol}`}
+                      style={{
+                        padding: 10,
+                        borderRadius: 14,
+                        border: "1px solid rgba(15,23,42,0.08)",
+                        backgroundColor: status.triggered ? "rgba(34,197,94,0.08)" : "#ffffff",
+                        display: "grid",
+                        gap: 6,
+                      }}
+                    >
+                      <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center" }}>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontWeight: 800, color: "#0f172a", fontSize: 13 }}>{item.symbol}</div>
+                          <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>
+                            {item.name} · {THRESHOLD_CATEGORY_LABELS[item.category]}
+                          </div>
+                        </div>
+                        <span
+                          style={{
+                            padding: "3px 8px",
+                            borderRadius: 999,
+                            fontSize: 10,
+                            fontWeight: 800,
+                            color: status.triggered ? "#166534" : "#475569",
+                            backgroundColor: status.triggered ? "rgba(34,197,94,0.12)" : "rgba(15,23,42,0.06)",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {status.triggered ? "Triggered" : "Watching"}
+                        </span>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap", fontSize: 11 }}>
+                        <span style={{ color: "#0f172a", fontWeight: 700 }}>
+                          {formatNumber(item.currentValue)} / {formatNumber(item.thresholdValue)} {item.unit}
+                        </span>
+                        <span style={{ color: "#64748b" }}>
+                          {status.distance >= 0 ? "+" : ""}
+                          {formatNumber(status.distance)} ({status.percent.toFixed(1)}%)
+                        </span>
+                      </div>
+                      <div style={{ fontSize: 11, color: "#475569", lineHeight: 1.4 }}>{item.note}</div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {thresholds.length === 0 && (
+                <div
+                  style={{
+                    padding: 12,
+                    borderRadius: 14,
+                    border: "1px dashed rgba(15,23,42,0.18)",
+                    color: "#64748b",
+                    backgroundColor: "#fff",
+                    fontSize: 11,
+                  }}
+                >
+                  暂无阈值配置，管理员可以补充股票、货币和期货的当前值与阈值。
+                </div>
+              )}
+            </div>
+
             {signals.map((s) => {
               const colors = {
                 bullish: {
@@ -1240,6 +1409,8 @@ export default function Home() {
                 },
               };
               const color = colors[s.direction];
+              const matchedThreshold = findThresholdForSignal(s.asset);
+              const thresholdStatus = matchedThreshold ? getThresholdStatus(matchedThreshold) : null;
 
               return (
                 <div
@@ -1284,6 +1455,47 @@ export default function Home() {
                     </span>
                   </div>
                   <div style={{ color: "#64748b", marginTop: 8, fontSize: 12, lineHeight: 1.45 }}>{s.reason}</div>
+                  {matchedThreshold && thresholdStatus && (
+                    <div
+                      style={{
+                        marginTop: 10,
+                        padding: "10px 12px",
+                        borderRadius: 12,
+                        border: "1px solid rgba(15,23,42,0.08)",
+                        backgroundColor: thresholdStatus.triggered ? "rgba(34,197,94,0.08)" : "rgba(248,250,252,0.9)",
+                        display: "grid",
+                        gap: 6,
+                      }}
+                    >
+                      <div style={{ display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
+                        <span style={{ fontSize: 11, fontWeight: 800, color: "#0f172a" }}>
+                          关联阈值 · {matchedThreshold.symbol}
+                        </span>
+                        <span
+                          style={{
+                            padding: "3px 8px",
+                            borderRadius: 999,
+                            backgroundColor: thresholdStatus.triggered ? "rgba(34,197,94,0.14)" : "rgba(15,23,42,0.06)",
+                            color: thresholdStatus.triggered ? "#166534" : "#475569",
+                            fontSize: 10,
+                            fontWeight: 800,
+                          }}
+                        >
+                          {thresholdStatus.triggered ? (isZh ? "已触发" : "Triggered") : isZh ? "观察中" : "Watching"}
+                        </span>
+                      </div>
+                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", fontSize: 11, color: "#334155" }}>
+                        <span>
+                          {formatNumber(matchedThreshold.currentValue)} / {formatNumber(matchedThreshold.thresholdValue)} {matchedThreshold.unit}
+                        </span>
+                        <span>
+                          {thresholdStatus.distance >= 0 ? "+" : ""}
+                          {formatNumber(thresholdStatus.distance)} ({thresholdStatus.percent.toFixed(1)}%)
+                        </span>
+                        <span>{THRESHOLD_CATEGORY_LABELS[matchedThreshold.category]}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}
