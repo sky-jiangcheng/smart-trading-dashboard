@@ -121,6 +121,7 @@ export default function Home() {
   const newsRef = useRef<NewsItem[]>([]);
   const signalsRef = useRef<SignalItem[]>([]);
   const [sourcePrefsLoaded, setSourcePrefsLoaded] = useState(false);
+  const isZh = lang === "zh";
   const ui = COPY[lang];
   const availableSources = Array.from(new Set(news.map((item) => item.source)));
   const sourceSearchTerm = sourceSearch.trim().toLowerCase();
@@ -318,11 +319,11 @@ export default function Home() {
           backdropFilter: "blur(14px)",
         }}
       >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
             gap: 16,
             flexWrap: "wrap",
           }}
@@ -412,13 +413,17 @@ export default function Home() {
           >
             <div
               style={{
-                flex: "1 1 200px",
-                minWidth: 0,
+                flex: "0 0 176px",
+                minWidth: 176,
                 padding: "10px 12px",
                 border: "1px solid rgba(15, 23, 42, 0.08)",
                 borderRadius: 14,
                 backgroundColor: "rgba(255,255,255,0.72)",
                 boxShadow: "0 8px 30px rgba(15, 23, 42, 0.04)",
+                minHeight: 68,
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
               }}
             >
               <div style={{ fontSize: 11, color: "#64748b", marginBottom: 4, fontWeight: 600 }}>
@@ -435,6 +440,7 @@ export default function Home() {
                 display: "inline-flex",
                 alignItems: "center",
                 justifyContent: "center",
+                minWidth: 92,
                 border: "1px solid rgba(15, 23, 42, 0.08)",
                 backgroundColor: "rgba(255,255,255,0.86)",
                 color: "#0f172a",
@@ -462,6 +468,7 @@ export default function Home() {
                 color: "#0f172a",
                 borderRadius: 14,
                 padding: "10px 14px",
+                minWidth: 60,
                 fontSize: 12,
                 fontWeight: 700,
                 cursor: "pointer",
@@ -505,24 +512,24 @@ export default function Home() {
           }}
         >
           <div
-            style={{
-              marginBottom: 14,
-              display: "flex",
-              alignItems: "flex-end",
-              justifyContent: "space-between",
+          style={{
+            marginBottom: 14,
+            display: "flex",
+            alignItems: "flex-end",
+            justifyContent: "space-between",
               gap: 10,
               flexWrap: "wrap",
             }}
           >
-            <div>
+            <div style={{ minHeight: 62, display: "flex", flexDirection: "column", justifyContent: "center" }}>
               <h2 style={{ margin: 0, fontSize: 20, color: "#0f172a", fontWeight: 800, lineHeight: 1.2 }}>
                 {ui.newsTitle}
               </h2>
-              <div style={{ marginTop: 4, fontSize: 12, color: "#64748b", lineHeight: 1.2 }}>
+              <div style={{ marginTop: 4, fontSize: 12, color: "#64748b", lineHeight: 1.35, minHeight: 32 }}>
                 {ui.newsSubtitle}
               </div>
             </div>
-            <div style={{ fontSize: 11, color: "#64748b" }}>
+            <div style={{ fontSize: 11, color: "#64748b", whiteSpace: "nowrap", minWidth: 72, textAlign: "right" }}>
               {visibleNews.length} items
             </div>
           </div>
@@ -543,9 +550,10 @@ export default function Home() {
                 alignItems: "center",
                 gap: 12,
                 flexWrap: "wrap",
+                minHeight: 42,
               }}
             >
-              <div style={{ fontSize: 11, color: "#64748b", lineHeight: 1.35 }}>
+              <div style={{ fontSize: 11, color: "#64748b", lineHeight: 1.35, minWidth: 0, flex: "1 1 260px" }}>
                 <div style={{ fontWeight: 700, color: "#0f172a", marginBottom: 2 }}>{ui.sourceFilterTitle}</div>
                 <div>{ui.sourceFilterHint}</div>
               </div>
@@ -559,10 +567,11 @@ export default function Home() {
               <input
                 value={sourceSearch}
                 onChange={(e) => setSourceSearch(e.target.value)}
-                placeholder={lang === "zh" ? "搜索来源..." : "Search sources..."}
+                placeholder={isZh ? "搜索来源..." : "Search sources..."}
                 style={{
                   flex: "1 1 220px",
                   minWidth: 0,
+                  minHeight: 38,
                   padding: "9px 11px",
                   borderRadius: 12,
                   border: "1px solid rgba(15,23,42,0.12)",
@@ -578,6 +587,7 @@ export default function Home() {
                   border: "1px solid rgba(15, 23, 42, 0.08)",
                   borderRadius: 999,
                   padding: "9px 12px",
+                  minWidth: 88,
                   backgroundColor: "#0f172a",
                   color: "#ffffff",
                   fontSize: 11,
@@ -594,6 +604,7 @@ export default function Home() {
                   border: "1px solid rgba(15, 23, 42, 0.08)",
                   borderRadius: 999,
                   padding: "9px 12px",
+                  minWidth: 88,
                   backgroundColor: "#ffffff",
                   color: "#0f172a",
                   fontSize: 11,
@@ -610,6 +621,7 @@ export default function Home() {
                   border: "1px solid rgba(15, 23, 42, 0.08)",
                   borderRadius: 999,
                   padding: "9px 12px",
+                  minWidth: 92,
                   backgroundColor: sourceMode === "all" ? "#0f172a" : "#ffffff",
                   color: sourceMode === "all" ? "#ffffff" : "#0f172a",
                   fontSize: 11,
@@ -626,6 +638,7 @@ export default function Home() {
                   border: "1px solid rgba(15, 23, 42, 0.08)",
                   borderRadius: 999,
                   padding: "9px 12px",
+                  minWidth: 72,
                   backgroundColor: sourceMode === "custom" && selectedSources.length === 0 ? "#0f172a" : "#ffffff",
                   color: sourceMode === "custom" && selectedSources.length === 0 ? "#ffffff" : "#0f172a",
                   fontSize: 11,
@@ -655,6 +668,7 @@ export default function Home() {
                       fontSize: 11,
                       cursor: "pointer",
                       userSelect: "none",
+                      maxWidth: 260,
                     }}
                     title={source}
                   >
@@ -664,7 +678,18 @@ export default function Home() {
                       onChange={() => toggleSource(source)}
                       style={{ accentColor: "#000000" }}
                     />
-                    <span>{formatSourceLabel(source)}</span>
+                    <span
+                      style={{
+                        display: "inline-block",
+                        maxWidth: 160,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        verticalAlign: "bottom",
+                      }}
+                    >
+                      {formatSourceLabel(source)}
+                    </span>
                     <span
                       style={{
                         padding: "2px 6px",
@@ -691,7 +716,7 @@ export default function Home() {
                     fontSize: 11,
                   }}
                 >
-                  {lang === "zh" ? "没有匹配的来源" : "No matching sources"}
+                  {isZh ? "没有匹配的来源" : "No matching sources"}
                 </div>
               )}
             </div>
@@ -922,7 +947,7 @@ export default function Home() {
                         whiteSpace: "nowrap",
                       }}
                     >
-                      {lang === "zh"
+                      {isZh
                         ? s.direction === "bullish"
                           ? "看涨"
                           : s.direction === "bearish"
