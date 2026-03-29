@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { startTransition, useEffect, useRef, useState } from "react";
 import { config } from "../lib/config";
 
 type NewsItem = {
@@ -9,6 +9,7 @@ type NewsItem = {
   title: string;
   url: string;
   domain: string;
+  sourceUrl?: string;
   source: string;
   points: number;
   comments: number;
@@ -31,6 +32,10 @@ type SourceItem = {
 type Lang = "en" | "zh";
 
 const SOURCE_STORAGE_KEY = "investment-dashboard:selected-sources";
+const NEWS_LIMIT_STORAGE_KEY = "investment-dashboard:news-limit";
+const DATA_CACHE_KEY = "investment-dashboard:data-cache";
+const DATA_CACHE_TTL_MS = 2 * 60 * 1000;
+const NEWS_LIMIT_OPTIONS = [50, 100, 200] as const;
 
 const SOURCE_LABEL_OVERRIDES: Array<[RegExp, string]> = [
   [/cnbc/i, "CNBC"],
@@ -58,6 +63,7 @@ const COPY: Record<
     newsTitle: string;
     newsSubtitle: string;
     newsCountLabel: string;
+    newsLimitLabel: string;
     signalsTitle: string;
     signalsSubtitle: string;
     signalsCountLabel: string;
@@ -87,6 +93,7 @@ const COPY: Record<
     newsTitle: "🌍 Global News",
     newsSubtitle: "Live feed refreshed every 5 seconds",
     newsCountLabel: "items",
+    newsLimitLabel: "News count",
     signalsTitle: "📈 Investment Signals",
     signalsSubtitle: "Signals inferred from the headlines above",
     signalsCountLabel: "signals",
@@ -115,6 +122,7 @@ const COPY: Record<
     newsTitle: "🌍 全球新闻",
     newsSubtitle: "每 5 秒刷新一次",
     newsCountLabel: "条",
+    newsLimitLabel: "新闻条数",
     signalsTitle: "📈 投资信号",
     signalsSubtitle: "根据上方新闻自动生成信号",
     signalsCountLabel: "条信号",
@@ -138,6 +146,7 @@ export default function Home() {
   const [signals, setSignals] = useState<SignalItem[]>([]);
   const [sourceCatalog, setSourceCatalog] = useState<SourceItem[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(true);
+  const [newsLimit, setNewsLimit] = useState<number>(200);
   const [lang, setLang] = useState<Lang>("en");
   const [sourceMode, setSourceMode] = useState<"all" | "custom">("all");
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
@@ -190,6 +199,18 @@ export default function Home() {
     sourceMode === "all"
       ? news
       : news.filter((item) => selectedSources.includes(item.sourceUrl || item.source));
+  const displayNews = [...visibleNews]
+    .sort((a, b) => {
+      const aTime = a.publishedAt ? Date.parse(a.publishedAt) : 0;
+      const bTime = b.publishedAt ? Date.parse(b.publishedAt) : 0;
+      const diff = bTime - aTime;
+      if (diff !== 0) {
+        return diff;
+      }
+
+      return a.rank - b.rank;
+    })
+    .slice(0, newsLimit);
   const visibleSourceCount = sourceMode === "all" ? availableSourceUrls.length : selectedSources.length;
   const visibleSourceLabel = sourceMode === "all" ? ui.selectAllSources : ui.sourceFilterTitle;
   const filteredSources = availableSources.filter((source) => {
@@ -258,6 +279,51 @@ export default function Home() {
     return item.age;
   }
 
+  function hydrateCachedData() {
+    try {
+      const cachedNewsLimit = window.localStorage.getItem(NEWS_LIMIT_STORAGE_KEY);
+      if (cachedNewsLimit) {
+        const parsedLimit = Number(cachedNewsLimit);
+        if (NEWS_LIMIT_OPTIONS.includes(parsedLimit as (typeof NEWS_LIMIT_OPTIONS)[number])) {
+          setNewsLimit(parsedLimit);
+        }
+      }
+
+      const cached = window.localStorage.getItem(DATA_CACHE_KEY);
+      if (!cached) {
+        return;
+      }
+
+      const parsed = JSON.parse(cached);
+      if (!parsed || typeof parsed !== "object") {
+        return;
+      }
+
+      if (typeof parsed.savedAt === "number" && Date.now() - parsed.savedAt > DATA_CACHE_TTL_MS) {
+        return;
+      }
+
+      if (Array.isArray(parsed.news)) {
+        setNews(parsed.news.filter((item: unknown): item is NewsItem => Boolean(item) && typeof item === "object" && typeof (item as NewsItem).id === "string"));
+      }
+
+      if (Array.isArray(parsed.signals)) {
+        setSignals(parsed.signals.filter((item: unknown): item is SignalItem => Boolean(item) && typeof item === "object" && typeof (item as SignalItem).asset === "string"));
+      }
+
+      if (Array.isArray(parsed.sourceCatalog)) {
+        setSourceCatalog(
+          parsed.sourceCatalog.filter(
+            (item: unknown): item is SourceItem =>
+              Boolean(item) && typeof item === "object" && typeof (item as SourceItem).url === "string" && typeof (item as SourceItem).label === "string",
+          ),
+        );
+      }
+    } catch {
+      // Ignore malformed cache entries.
+    }
+  }
+
   function normalizeSourceSelection(values: string[], options: SourceItem[]) {
     const byUrl = new Map(options.map((item) => [item.url, item]));
     const byLabel = new Map(options.map((item) => [item.label, item]));
@@ -281,6 +347,10 @@ export default function Home() {
   useEffect(() => {
     document.documentElement.lang = isZh ? "zh-CN" : "en";
   }, [isZh]);
+
+  useEffect(() => {
+    hydrateCachedData();
+  }, []);
 
   useEffect(() => {
     try {
@@ -356,12 +426,20 @@ export default function Home() {
   }, [selectedSources, sourceMode, sourcePrefsLoaded]);
 
   useEffect(() => {
+    try {
+      window.localStorage.setItem(NEWS_LIMIT_STORAGE_KEY, String(newsLimit));
+    } catch {
+      // Ignore storage failures.
+    }
+  }, [newsLimit]);
+
+  useEffect(() => {
     let cancelled = false;
 
     async function load() {
       setIsRefreshing(true);
 
-        try {
+      try {
         const [newsRes, signalsRes, sourcesRes] = await Promise.all([
           fetch(`${config.apiUrl}/news`),
           fetch(`${config.apiUrl}/signals`),
@@ -390,14 +468,26 @@ export default function Home() {
           setSignals(nextSignals);
         }
 
-        if (nextSources.length > 0 || sourceCatalog.length === 0) {
+        if (nextSources.length > 0) {
           setSourceCatalog(
-            nextSources
-              .filter((item: unknown): item is SourceItem => {
-                return Boolean(item) && typeof item === "object" && typeof (item as SourceItem).url === "string" && typeof (item as SourceItem).label === "string";
-              })
-              .map((item: SourceItem) => ({ url: item.url, label: item.label })),
+            nextSources.filter((item: unknown): item is SourceItem => {
+              return Boolean(item) && typeof item === "object" && typeof (item as SourceItem).url === "string" && typeof (item as SourceItem).label === "string";
+            }),
           );
+        }
+
+        try {
+          window.localStorage.setItem(
+            DATA_CACHE_KEY,
+            JSON.stringify({
+              savedAt: Date.now(),
+              news: nextNews,
+              signals: nextSignals,
+              sourceCatalog: nextSources,
+            }),
+          );
+        } catch {
+          // Ignore cache write failures.
         }
       } finally {
         if (!cancelled) {
@@ -413,7 +503,7 @@ export default function Home() {
       cancelled = true;
       clearInterval(interval);
     };
-  }, [sourceCatalog.length]);
+  }, []);
 
   function selectAllSources() {
     setSourceMode("all");
@@ -442,6 +532,15 @@ export default function Home() {
 
       return [...base, sourceUrl];
     });
+  }
+
+  function handleNewsLimitChange(value: string) {
+    const nextLimit = Number(value);
+    if (NEWS_LIMIT_OPTIONS.includes(nextLimit as (typeof NEWS_LIMIT_OPTIONS)[number])) {
+      startTransition(() => {
+        setNewsLimit(nextLimit);
+      });
+    }
   }
 
   return (
@@ -565,6 +664,7 @@ export default function Home() {
             }}
           >
             <div
+              className="soft-switch"
               style={{
                 flex: "0 0 176px",
                 minWidth: 176,
@@ -587,8 +687,60 @@ export default function Home() {
                 {visibleSourceLabel}
               </div>
             </div>
+            <div
+              className="soft-switch"
+              style={{
+                flex: "0 0 160px",
+                minWidth: 160,
+                padding: "10px 12px",
+                border: "1px solid rgba(15, 23, 42, 0.08)",
+                borderRadius: 14,
+                backgroundColor: "rgba(255,255,255,0.72)",
+                boxShadow: "0 8px 30px rgba(15, 23, 42, 0.04)",
+                minHeight: 68,
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                gap: 6,
+              }}
+            >
+              <div style={{ fontSize: 11, color: "#64748b", fontWeight: 600 }}>{ui.newsLimitLabel}</div>
+              <div
+                role="tablist"
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: `repeat(${NEWS_LIMIT_OPTIONS.length}, minmax(0, 1fr))`,
+                  gap: 6,
+                }}
+              >
+                {NEWS_LIMIT_OPTIONS.map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    aria-pressed={newsLimit === option}
+                    className="soft-switch"
+                    onClick={() => handleNewsLimitChange(String(option))}
+                    style={{
+                      border: "1px solid rgba(15,23,42,0.12)",
+                      borderRadius: 10,
+                      backgroundColor: newsLimit === option ? "#0f172a" : "#ffffff",
+                      color: newsLimit === option ? "#ffffff" : "#0f172a",
+                      fontSize: 11,
+                      fontWeight: 700,
+                      padding: "8px 10px",
+                      minHeight: 36,
+                      cursor: "pointer",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {numberFormatter.format(option)}
+                  </button>
+                ))}
+              </div>
+            </div>
             <a
               href={config.adminUrl}
+              className="soft-switch"
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -614,7 +766,12 @@ export default function Home() {
             </a>
             <button
               type="button"
-              onClick={() => setLang((current) => (current === "en" ? "zh" : "en"))}
+              className="soft-switch"
+              onClick={() =>
+                startTransition(() => {
+                  setLang((current) => (current === "en" ? "zh" : "en"));
+                })
+              }
               style={{
                 border: "1px solid rgba(15, 23, 42, 0.08)",
                 backgroundColor: "rgba(255,255,255,0.86)",
@@ -664,7 +821,8 @@ export default function Home() {
             backdropFilter: "blur(18px)",
           }}
         >
-          <div
+            <div
+            className="soft-switch"
             style={{
               marginBottom: 14,
               display: "flex",
@@ -674,7 +832,7 @@ export default function Home() {
               flexWrap: "wrap",
             }}
           >
-            <div key={`${lang}-news-heading`} style={{ ...langSwapStyle, minHeight: 62, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+            <div key={`${lang}-news-heading`} className="soft-switch" style={{ ...langSwapStyle, minHeight: 62, display: "flex", flexDirection: "column", justifyContent: "center" }}>
               <h2 style={{ margin: 0, fontSize: 20, color: "#0f172a", fontWeight: 800, lineHeight: 1.2 }}>
                 {ui.newsTitle}
               </h2>
@@ -682,8 +840,8 @@ export default function Home() {
                 {ui.newsSubtitle}
               </div>
             </div>
-            <div style={{ fontSize: 11, color: "#64748b", whiteSpace: "nowrap", minWidth: 88, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
-              {numberFormatter.format(visibleNews.length)} {ui.newsCountLabel}
+            <div className="soft-switch" style={{ fontSize: 11, color: "#64748b", whiteSpace: "nowrap", minWidth: 88, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
+              {numberFormatter.format(displayNews.length)} {ui.newsCountLabel}
             </div>
           </div>
 
@@ -706,11 +864,11 @@ export default function Home() {
                 minHeight: 42,
               }}
             >
-              <div key={`${lang}-source-copy`} className="lang-swap" style={{ fontSize: 11, color: "#64748b", lineHeight: 1.35, minWidth: 0, flex: "1 1 260px" }}>
+              <div key={`${lang}-source-copy`} className="lang-swap soft-switch" style={{ fontSize: 11, color: "#64748b", lineHeight: 1.35, minWidth: 0, flex: "1 1 260px" }}>
                 <div style={{ fontWeight: 700, color: "#0f172a", marginBottom: 2 }}>{ui.sourceFilterTitle}</div>
                 <div>{ui.sourceFilterHint}</div>
               </div>
-              <div style={{ fontSize: 11, color: "#64748b", whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>
+              <div className="soft-switch" style={{ fontSize: 11, color: "#64748b", whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>
                 {sourceMode === "all"
                   ? `${numberFormatter.format(availableSourceUrls.length)} ${ui.sourceCountLabel}`
                   : `${numberFormatter.format(selectedSources.length)}/${numberFormatter.format(availableSourceUrls.length)} ${ui.sourceCountLabel}`}
@@ -718,6 +876,7 @@ export default function Home() {
             </div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
               <input
+                className="soft-switch"
                 value={sourceSearch}
                 onChange={(e) => setSourceSearch(e.target.value)}
                 placeholder={isZh ? "搜索来源..." : "Search sources..."}
@@ -735,6 +894,7 @@ export default function Home() {
               />
               <button
                 type="button"
+                className="soft-switch"
                 onClick={() => focusSourceGroup("china")}
                 style={{
                   border: "1px solid rgba(15, 23, 42, 0.08)",
@@ -752,6 +912,7 @@ export default function Home() {
               </button>
               <button
                 type="button"
+                className="soft-switch"
                 onClick={() => focusSourceGroup("global")}
                 style={{
                   border: "1px solid rgba(15, 23, 42, 0.08)",
@@ -769,6 +930,7 @@ export default function Home() {
               </button>
               <button
                 type="button"
+                className="soft-switch"
                 onClick={selectAllSources}
                 style={{
                   border: "1px solid rgba(15, 23, 42, 0.08)",
@@ -786,6 +948,7 @@ export default function Home() {
               </button>
               <button
                 type="button"
+                className="soft-switch"
                 onClick={clearSources}
                 style={{
                   border: "1px solid rgba(15, 23, 42, 0.08)",
@@ -808,6 +971,7 @@ export default function Home() {
 
                 return (
                   <label
+                    className="soft-switch"
                     key={source.url}
                     style={{
                       display: "inline-flex",
@@ -876,7 +1040,7 @@ export default function Home() {
           </div>
 
           <div style={{ overflowY: "auto", flex: 1, minHeight: 0 }}>
-            {visibleNews.map((n) => (
+            {displayNews.map((n) => (
               <a
                 key={n.id}
                 href={n.url}
@@ -989,7 +1153,7 @@ export default function Home() {
                 </div>
               </a>
             ))}
-            {visibleNews.length === 0 && (
+            {displayNews.length === 0 && (
               <div
                 style={{
                   padding: 14,
@@ -1035,7 +1199,7 @@ export default function Home() {
               flexWrap: "wrap",
             }}
           >
-            <div key={`${lang}-signals-heading`} className="lang-swap">
+            <div key={`${lang}-signals-heading`} className="lang-swap soft-switch">
               <h2 style={{ margin: 0, fontSize: 18, color: "#0f172a", fontWeight: 800, lineHeight: 1.2 }}>
                 {ui.signalsTitle}
               </h2>

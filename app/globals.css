@@ -51,3 +51,13 @@ body {
   animation: lang-swap 180ms ease;
   will-change: opacity, transform;
 }
+
+.soft-switch {
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease,
+    background-color 180ms ease,
+    color 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
