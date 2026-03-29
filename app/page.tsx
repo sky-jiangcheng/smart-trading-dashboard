@@ -6,6 +6,7 @@ type News = {
   title: string;
   source: string;
   time: string;
+  url?: string;
 };
 
 type Signal = {
@@ -114,54 +115,120 @@ export default function Home() {
   }, []);
 
   return (
-    <div style={{ display: "flex", height: "100vh", fontFamily: "Arial" }}>
+    <div style={{ display: "flex", height: "100vh", fontFamily: "Inter, -apple-system, BlinkMacSystemFont, sans-serif", backgroundColor: "#f6f6ef" }}>
 
-      {/* 左边：新闻 */}
-      <div style={{ flex: 1, borderRight: "1px solid #ccc", padding: 20 }}>
-        <h2>🌍 Global News</h2>
-        <div style={{ overflowY: "auto", height: "90%" }}>
+      {/* 左边：新闻 - Hacker News 风格 */}
+      <div style={{ flex: 1, borderRight: "1px solid #dcdcdc", padding: 16, backgroundColor: "#f6f6ef" }}>
+        <h2 style={{ margin: "0 0 16px 0", fontSize: 18, color: "#000000", fontWeight: "bold" }}>🌍 Global News</h2>
+        <div style={{ overflowY: "auto", height: "calc(100% - 60px)" }}>
           {news.map((n, i) => (
-            <div key={i} style={{ marginBottom: 15 }}>
-              <div style={{ fontWeight: "bold" }}>{n.title}</div>
-              <div style={{ fontSize: 12, color: "gray" }}>
-                {n.source} · {n.time}
+            <div
+              key={i}
+              style={{
+                marginBottom: 12,
+                paddingBottom: 12,
+                borderBottom: i === news.length - 1 ? "none" : "1px dashed #cccccc",
+                lineHeight: 1.3
+              }}
+            >
+              <div style={{ fontSize: 14 }}>
+                {n.url ? (
+                  <a
+                    href={n.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      color: "#000000",
+                      textDecoration: "none"
+                    }}
+                    onMouseOver={e => e.currentTarget.style.textDecoration = "underline"}
+                    onMouseOut={e => e.currentTarget.style.textDecoration = "none"}
+                  >
+                    {n.title}
+                  </a>
+                ) : (
+                  <span style={{ color: "#000000" }}>{n.title}</span>
+                )}
+              </div>
+              <div style={{ fontSize: 11, color: "#666666", marginTop: 4 }}>
+                {n.source}
+                {n.url && " · "}
+                {n.time}
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* 右边：信号 */}
-      <div style={{ flex: 1, padding: 20 }}>
-        <h2>📈 Investment Signals</h2>
-        {signals.map((s, i) => (
-          <div
-            key={i}
-            style={{
-              marginBottom: 15,
-              padding: 10,
-              borderRadius: 8,
-              background:
-                s.direction === "bullish"
-                  ? "#e6ffed"
-                  : s.direction === "bearish"
-                    ? "#ffe6e6"
-                    : "#f5f5f5",
-            }}
-          >
-            <div style={{ fontWeight: "bold" }}>{s.asset}</div>
-            <div>{s.reason}</div>
-            <div style={{ fontSize: 12 }}>
-              {s.direction.toUpperCase()}
+      {/* 右边：信号 - 和左侧风格一致 */}
+      <div style={{ flex: 1, padding: 16, backgroundColor: "#f6f6ef" }}>
+        <h2 style={{ margin: "0 0 16px 0", fontSize: 18, color: "#000000", fontWeight: "bold" }}>📈 Investment Signals</h2>
+        <div style={{ overflowY: "auto", height: "calc(100% - 60px)" }}>
+          {signals.map((s, i) => {
+            // 专业交易系统配色
+            const colors = {
+              bullish: {
+                bg: "#f0fdf4",
+                border: "#bbf7d0",
+                text: "#166534"
+              },
+              bearish: {
+                bg: "#fef2f2",
+                border: "#fecaca",
+                text: "#991b1b"
+              },
+              neutral: {
+                bg: "#f9fafb",
+                border: "#e5e7eb",
+                text: "#374151"
+              }
+            };
+            const color = colors[s.direction];
+
+            return (
+              <div
+                key={i}
+                style={{
+                  marginBottom: 12,
+                  paddingBottom: 12,
+                  borderBottom: i === signals.length - 1 ? "none" : "1px dashed #cccccc",
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontWeight: 600, color: "#000000", fontSize: 14 }}>{s.asset}</span>
+                  <span
+                    style={{
+                      padding: "2px 6px",
+                      borderRadius: 3,
+                      backgroundColor: color.text,
+                      color: "white",
+                      fontSize: 10,
+                      fontWeight: 600,
+                      letterSpacing: "0.5px"
+                    }}
+                  >
+                    {s.direction.toUpperCase()}
+                  </span>
+                </div>
+                <div style={{ color: "#666666", marginTop: 4, fontSize: 12, lineHeight: 1.4 }}>{s.reason}</div>
+              </div>
+            );
+          })}
+          {signals.length === 0 && (
+            <div style={{
+              padding: 20,
+              textAlign: "center",
+              color: "#666666",
+              fontStyle: "italic",
+              border: "1px dashed #cccccc",
+              borderRadius: 4,
+              fontSize: 12
+            }}>
+              No signals generated from current news
             </div>
-          </div>
-        ))}
-        {signals.length === 0 && (
-          <div style={{ color: "gray", fontStyle: "italic" }}>
-            No signals generated from current news
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+</div>
     </div>
   );
 }
