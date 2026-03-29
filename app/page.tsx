@@ -36,6 +36,10 @@ const SOURCE_LABEL_OVERRIDES: Array<[RegExp, string]> = [
   [/36kr|36氪/i, "36氪"],
 ];
 
+function isChineseSource(source: string) {
+  return /[\u4e00-\u9fff]/.test(source) || /中国|人民网|中国日报|中国新闻网|财联社|澎湃|新华|36kr/i.test(source);
+}
+
 const COPY: Record<
   Lang,
   {
@@ -76,7 +80,7 @@ const COPY: Record<
     noSignals: "No signals generated from current news",
     noNews: "No news matches the selected sources",
     sourceFilterTitle: "News sources",
-    sourceFilterHint: "Pick one or more feeds to focus the list.",
+    sourceFilterHint: "Search, group, and pick one or more feeds to focus the list.",
     selectAllSources: "Select all",
     clearSources: "Clear",
     sourceCountLabel: "sources",
@@ -98,7 +102,7 @@ const COPY: Record<
     noSignals: "当前新闻暂无可生成的信号",
     noNews: "当前所选来源暂无新闻",
     sourceFilterTitle: "新闻来源",
-    sourceFilterHint: "可勾选一个或多个来源来聚焦新闻列表。",
+    sourceFilterHint: "可搜索、分组，并勾选一个或多个来源来聚焦新闻列表。",
     selectAllSources: "全选",
     clearSources: "清空",
     sourceCountLabel: "个来源",
@@ -113,6 +117,7 @@ export default function Home() {
   const [lang, setLang] = useState<Lang>("en");
   const [sourceMode, setSourceMode] = useState<"all" | "custom">("all");
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
+  const [sourceSearch, setSourceSearch] = useState("");
   const newsRef = useRef<NewsItem[]>([]);
   const signalsRef = useRef<SignalItem[]>([]);
   const [sourcePrefsLoaded, setSourcePrefsLoaded] = useState(false);
@@ -120,14 +125,26 @@ export default function Home() {
   const availableSources = Array.from(new Set(news.map((item) => item.source))).sort((a, b) =>
     a.localeCompare(b, lang === "zh" ? "zh-Hans-CN" : "en"),
   );
+  const sourceSearchTerm = sourceSearch.trim().toLowerCase();
   const sourceCounts = news.reduce<Record<string, number>>((acc, item) => {
     acc[item.source] = (acc[item.source] || 0) + 1;
     return acc;
   }, {});
+  const groupedSources = {
+    china: availableSources.filter((source) => isChineseSource(source)),
+    global: availableSources.filter((source) => !isChineseSource(source)),
+  };
   const visibleNews =
     sourceMode === "all" ? news : news.filter((item) => selectedSources.includes(item.source));
   const visibleSourceCount = sourceMode === "all" ? availableSources.length : selectedSources.length;
   const visibleSourceLabel = sourceMode === "all" ? ui.selectAllSources : ui.sourceFilterTitle;
+  const filteredSources = availableSources.filter((source) => {
+    if (!sourceSearchTerm) {
+      return true;
+    }
+
+    return `${source} ${formatSourceLabel(source)}`.toLowerCase().includes(sourceSearchTerm);
+  });
 
   function formatSourceLabel(source: string) {
     const override = SOURCE_LABEL_OVERRIDES.find(([pattern]) => pattern.test(source));
@@ -272,6 +289,12 @@ export default function Home() {
   function clearSources() {
     setSourceMode("custom");
     setSelectedSources([]);
+  }
+
+  function focusSourceGroup(group: "china" | "global") {
+    const nextSources = groupedSources[group];
+    setSourceMode("custom");
+    setSelectedSources(nextSources);
   }
 
   function toggleSource(source: string) {
@@ -528,7 +551,7 @@ export default function Home() {
                 flexWrap: "wrap",
               }}
             >
-              <div style={{ fontSize: 11, color: "#666666", lineHeight: 1.35 }}>
+              <div style={{ fontSize: 11, color: "#64748b", lineHeight: 1.35 }}>
                 <div style={{ fontWeight: 700, color: "#0f172a", marginBottom: 2 }}>{ui.sourceFilterTitle}</div>
                 <div>{ui.sourceFilterHint}</div>
               </div>
@@ -538,22 +561,61 @@ export default function Home() {
                   : `${selectedSources.length}/${availableSources.length} ${ui.sourceCountLabel}`}
               </div>
             </div>
-            <div
-              style={{
-                display: "flex",
-                gap: 8,
-                flexWrap: "wrap",
-                marginTop: 10,
-                alignItems: "center",
-              }}
-            >
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
+              <input
+                value={sourceSearch}
+                onChange={(e) => setSourceSearch(e.target.value)}
+                placeholder={lang === "zh" ? "搜索来源..." : "Search sources..."}
+                style={{
+                  flex: "1 1 220px",
+                  minWidth: 0,
+                  padding: "9px 11px",
+                  borderRadius: 12,
+                  border: "1px solid rgba(15,23,42,0.12)",
+                  backgroundColor: "#fff",
+                  color: "#0f172a",
+                  fontSize: 12,
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => focusSourceGroup("china")}
+                style={{
+                  border: "1px solid rgba(15, 23, 42, 0.08)",
+                  borderRadius: 999,
+                  padding: "9px 12px",
+                  backgroundColor: "#0f172a",
+                  color: "#ffffff",
+                  fontSize: 11,
+                  cursor: "pointer",
+                  fontWeight: 600,
+                }}
+              >
+                中国 {groupedSources.china.length}
+              </button>
+              <button
+                type="button"
+                onClick={() => focusSourceGroup("global")}
+                style={{
+                  border: "1px solid rgba(15, 23, 42, 0.08)",
+                  borderRadius: 999,
+                  padding: "9px 12px",
+                  backgroundColor: "#ffffff",
+                  color: "#0f172a",
+                  fontSize: 11,
+                  cursor: "pointer",
+                  fontWeight: 600,
+                }}
+              >
+                国际 {groupedSources.global.length}
+              </button>
               <button
                 type="button"
                 onClick={selectAllSources}
                 style={{
                   border: "1px solid rgba(15, 23, 42, 0.08)",
                   borderRadius: 999,
-                  padding: "4px 10px",
+                  padding: "9px 12px",
                   backgroundColor: sourceMode === "all" ? "#0f172a" : "#ffffff",
                   color: sourceMode === "all" ? "#ffffff" : "#0f172a",
                   fontSize: 11,
@@ -569,7 +631,7 @@ export default function Home() {
                 style={{
                   border: "1px solid rgba(15, 23, 42, 0.08)",
                   borderRadius: 999,
-                  padding: "4px 10px",
+                  padding: "9px 12px",
                   backgroundColor: sourceMode === "custom" && selectedSources.length === 0 ? "#0f172a" : "#ffffff",
                   color: sourceMode === "custom" && selectedSources.length === 0 ? "#ffffff" : "#0f172a",
                   fontSize: 11,
@@ -581,7 +643,7 @@ export default function Home() {
               </button>
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
-              {availableSources.map((source) => {
+              {filteredSources.map((source) => {
                 const checked = sourceMode === "all" || selectedSources.includes(source);
 
                 return (
@@ -624,6 +686,20 @@ export default function Home() {
                   </label>
                 );
               })}
+              {filteredSources.length === 0 && (
+                <div
+                  style={{
+                    padding: "10px 12px",
+                    borderRadius: 999,
+                    border: "1px dashed rgba(15,23,42,0.14)",
+                    backgroundColor: "rgba(255,255,255,0.85)",
+                    color: "#64748b",
+                    fontSize: 11,
+                  }}
+                >
+                  {lang === "zh" ? "没有匹配的来源" : "No matching sources"}
+                </div>
+              )}
             </div>
           </div>
 
