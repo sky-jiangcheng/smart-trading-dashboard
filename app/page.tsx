@@ -27,6 +27,15 @@ type Lang = "en" | "zh";
 
 const SOURCE_STORAGE_KEY = "investment-dashboard:selected-sources";
 
+const SOURCE_LABEL_OVERRIDES: Array<[RegExp, string]> = [
+  [/cnbc/i, "CNBC"],
+  [/marketwatch/i, "MarketWatch"],
+  [/chinanews|中国新闻网/i, "中国新闻网"],
+  [/people|人民网/i, "人民网"],
+  [/chinadaily|中国日报/i, "中国日报"],
+  [/36kr|36氪/i, "36氪"],
+];
+
 const COPY: Record<
   Lang,
   {
@@ -113,6 +122,19 @@ export default function Home() {
   );
   const visibleNews =
     sourceMode === "all" ? news : news.filter((item) => selectedSources.includes(item.source));
+
+  function formatSourceLabel(source: string) {
+    const override = SOURCE_LABEL_OVERRIDES.find(([pattern]) => pattern.test(source));
+    if (override) {
+      return override[1];
+    }
+
+    if (source.length <= 34) {
+      return source;
+    }
+
+    return `${source.slice(0, 31)}...`;
+  }
 
   useEffect(() => {
     document.documentElement.lang = lang;
@@ -517,6 +539,7 @@ export default function Home() {
                       cursor: "pointer",
                       userSelect: "none",
                     }}
+                    title={source}
                   >
                     <input
                       type="checkbox"
@@ -524,7 +547,7 @@ export default function Home() {
                       onChange={() => toggleSource(source)}
                       style={{ accentColor: "#000000" }}
                     />
-                    <span>{source}</span>
+                    <span>{formatSourceLabel(source)}</span>
                   </label>
                 );
               })}
@@ -564,7 +587,8 @@ export default function Home() {
                   </div>
                 </div>
                 <div style={{ fontSize: 11, color: "#666666", marginTop: 6 }}>
-                  {n.domain} · {n.source} · {n.age}
+                  <span title={n.domain}>{n.domain}</span> ·{" "}
+                  <span title={n.source}>{formatSourceLabel(n.source)}</span> · {n.age}
                 </div>
                 <div
                   style={{
