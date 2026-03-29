@@ -120,8 +120,14 @@ export default function Home() {
   const availableSources = Array.from(new Set(news.map((item) => item.source))).sort((a, b) =>
     a.localeCompare(b, lang === "zh" ? "zh-Hans-CN" : "en"),
   );
+  const sourceCounts = news.reduce<Record<string, number>>((acc, item) => {
+    acc[item.source] = (acc[item.source] || 0) + 1;
+    return acc;
+  }, {});
   const visibleNews =
     sourceMode === "all" ? news : news.filter((item) => selectedSources.includes(item.source));
+  const visibleSourceCount = sourceMode === "all" ? availableSources.length : selectedSources.length;
+  const visibleSourceLabel = sourceMode === "all" ? ui.selectAllSources : ui.sourceFilterTitle;
 
   function formatSourceLabel(source: string) {
     const override = SOURCE_LABEL_OVERRIDES.find(([pattern]) => pattern.test(source));
@@ -282,86 +288,129 @@ export default function Home() {
   }
 
   return (
-    <div
-      style={{
-        height: "100dvh",
-        display: "flex",
-        flexDirection: "column",
-        fontFamily: "Inter, -apple-system, BlinkMacSystemFont, sans-serif",
-        backgroundColor: "#f6f6ef",
-        overflow: "hidden",
-      }}
-    >
+    <div style={{ height: "100dvh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
       <header
         style={{
           position: "sticky",
           top: 0,
           zIndex: 10,
-          padding: "12px 16px 10px",
-          borderBottom: "1px solid #dcdcdc",
-          backgroundColor: "#f6f6ef",
+          padding: "14px 18px 12px",
+          borderBottom: "1px solid rgba(15, 23, 42, 0.08)",
+          background:
+            "linear-gradient(180deg, rgba(255,255,255,0.84) 0%, rgba(255,255,255,0.72) 100%)",
+          backdropFilter: "blur(14px)",
         }}
       >
         <div
           style={{
             display: "flex",
             justifyContent: "space-between",
-            alignItems: "flex-end",
+            alignItems: "center",
             gap: 16,
             flexWrap: "wrap",
           }}
         >
-          <div>
-            <div
-              style={{
-                fontSize: 10,
-                letterSpacing: "0.12em",
-                textTransform: "uppercase",
-                color: "#666666",
-                marginBottom: 4,
-              }}
-            >
-              {ui.headerTag}
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, minWidth: 280 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+              <div
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "5px 10px",
+                  borderRadius: 999,
+                  border: "1px solid rgba(15,23,42,0.08)",
+                  backgroundColor: "rgba(255,255,255,0.7)",
+                  color: "#334155",
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: "0.12em",
+                  textTransform: "uppercase",
+                }}
+              >
+                {ui.headerTag}
+              </div>
+              <div
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "5px 10px",
+                  borderRadius: 999,
+                  backgroundColor: isRefreshing ? "rgba(202,138,4,0.12)" : "rgba(34,197,94,0.12)",
+                  color: isRefreshing ? "#a16207" : "#15803d",
+                  border: `1px solid ${isRefreshing ? "rgba(202,138,4,0.18)" : "rgba(34,197,94,0.18)"}`,
+                  fontSize: 11,
+                  fontWeight: 700,
+                }}
+              >
+                <span
+                  style={{
+                    width: 7,
+                    height: 7,
+                    borderRadius: 999,
+                    backgroundColor: isRefreshing ? "#f59e0b" : "#22c55e",
+                    boxShadow: isRefreshing ? "0 0 0 3px rgba(245,158,11,0.15)" : "0 0 0 3px rgba(34,197,94,0.15)",
+                  }}
+                />
+                {isRefreshing ? ui.refreshing : ui.upToDate}
+              </div>
             </div>
-            <h1
-              style={{
-                margin: 0,
-                fontSize: 22,
-                lineHeight: 1.1,
-                color: "#000000",
-                fontWeight: 700,
-              }}
-            >
-              {ui.headerTitle}
-            </h1>
+            <div>
+              <h1
+                style={{
+                  margin: 0,
+                  fontSize: 28,
+                  lineHeight: 1.05,
+                  color: "#0f172a",
+                  fontWeight: 800,
+                  letterSpacing: "-0.03em",
+                }}
+              >
+                {ui.headerTitle}
+              </h1>
+              <div
+                style={{
+                  marginTop: 8,
+                  maxWidth: 720,
+                  fontSize: 13,
+                  lineHeight: 1.5,
+                  color: "#475569",
+                }}
+              >
+                {ui.headerDescription}
+              </div>
+            </div>
           </div>
           <div
             style={{
               display: "flex",
-              alignItems: "center",
+              alignItems: "stretch",
               justifyContent: "flex-end",
               gap: 10,
-              flexWrap: "nowrap",
-              flex: "1 1 360px",
+              flexWrap: "wrap",
+              flex: "1 1 420px",
               minWidth: 0,
             }}
           >
             <div
               style={{
-                flex: "1 1 auto",
-                fontSize: 11,
-                lineHeight: 1.35,
-                color: "#666666",
+                flex: "1 1 200px",
                 minWidth: 0,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
+                padding: "10px 12px",
+                border: "1px solid rgba(15, 23, 42, 0.08)",
+                borderRadius: 14,
+                backgroundColor: "rgba(255,255,255,0.72)",
+                boxShadow: "0 8px 30px rgba(15, 23, 42, 0.04)",
               }}
             >
-              <span>{ui.headerDescription}</span>
-              <span style={{ marginLeft: 8, color: "#999999", flexShrink: 0 }}>
-                {isRefreshing ? ui.refreshing : ui.upToDate}
-              </span>
+              <div style={{ fontSize: 11, color: "#64748b", marginBottom: 4, fontWeight: 600 }}>
+                {ui.sourceFilterTitle}
+              </div>
+              <div style={{ fontSize: 13, color: "#0f172a", fontWeight: 700 }}>{visibleSourceCount}</div>
+              <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>
+                {visibleSourceLabel}
+              </div>
             </div>
             <a
               href={config.adminUrl}
@@ -369,17 +418,18 @@ export default function Home() {
                 display: "inline-flex",
                 alignItems: "center",
                 justifyContent: "center",
-                border: "1px solid #d0d0c8",
-                backgroundColor: "#ffffff",
-                color: "#000000",
-                borderRadius: 999,
-                padding: "6px 10px",
-                fontSize: 11,
-                fontWeight: 600,
+                border: "1px solid rgba(15, 23, 42, 0.08)",
+                backgroundColor: "rgba(255,255,255,0.86)",
+                color: "#0f172a",
+                borderRadius: 14,
+                padding: "10px 14px",
+                fontSize: 12,
+                fontWeight: 700,
                 cursor: "pointer",
                 whiteSpace: "nowrap",
                 textDecoration: "none",
                 flexShrink: 0,
+                boxShadow: "0 8px 30px rgba(15, 23, 42, 0.04)",
               }}
               aria-label="Go to admin console"
               title="管理台"
@@ -390,16 +440,17 @@ export default function Home() {
               type="button"
               onClick={() => setLang((current) => (current === "en" ? "zh" : "en"))}
               style={{
-                border: "1px solid #d0d0c8",
-                backgroundColor: "#f6f6ef",
-                color: "#000000",
-                borderRadius: 999,
-                padding: "6px 10px",
-                fontSize: 11,
-                fontWeight: 600,
+                border: "1px solid rgba(15, 23, 42, 0.08)",
+                backgroundColor: "rgba(255,255,255,0.86)",
+                color: "#0f172a",
+                borderRadius: 14,
+                padding: "10px 14px",
+                fontSize: 12,
+                fontWeight: 700,
                 cursor: "pointer",
                 whiteSpace: "nowrap",
                 flexShrink: 0,
+                boxShadow: "0 8px 30px rgba(15, 23, 42, 0.04)",
               }}
               aria-label={`Switch language to ${ui.toggleLabel}`}
             >
@@ -415,37 +466,47 @@ export default function Home() {
           display: "flex",
           minHeight: 0,
           overflow: "hidden",
-          fontFamily: "Inter, -apple-system, BlinkMacSystemFont, sans-serif",
-          backgroundColor: "#f6f6ef",
+          gap: 16,
+          padding: 16,
+          background: "transparent",
         }}
       >
-        {/* 左边：新闻 - Hacker News 风格 */}
         <section
           style={{
             flex: 1,
             minWidth: 0,
-            borderRight: "1px solid #dcdcdc",
+            border: "1px solid rgba(15, 23, 42, 0.08)",
+            borderRadius: 20,
             padding: 16,
-            backgroundColor: "#f6f6ef",
+            background:
+              "linear-gradient(180deg, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.78) 100%)",
+            boxShadow: "0 20px 50px rgba(15, 23, 42, 0.08)",
             display: "flex",
             flexDirection: "column",
             minHeight: 0,
+            backdropFilter: "blur(18px)",
           }}
         >
           <div
             style={{
-              marginBottom: 12,
+              marginBottom: 14,
               display: "flex",
-              alignItems: "baseline",
+              alignItems: "flex-end",
+              justifyContent: "space-between",
               gap: 10,
               flexWrap: "wrap",
             }}
           >
-            <h2 style={{ margin: 0, fontSize: 18, color: "#000000", fontWeight: "bold", lineHeight: 1.2 }}>
-              {ui.newsTitle}
-            </h2>
-            <div style={{ fontSize: 11, color: "#666666", lineHeight: 1.2 }}>
-              {ui.newsSubtitle}
+            <div>
+              <h2 style={{ margin: 0, fontSize: 20, color: "#0f172a", fontWeight: 800, lineHeight: 1.2 }}>
+                {ui.newsTitle}
+              </h2>
+              <div style={{ marginTop: 4, fontSize: 12, color: "#64748b", lineHeight: 1.2 }}>
+                {ui.newsSubtitle}
+              </div>
+            </div>
+            <div style={{ fontSize: 11, color: "#64748b" }}>
+              {visibleNews.length} items
             </div>
           </div>
 
@@ -453,9 +514,9 @@ export default function Home() {
             style={{
               marginBottom: 12,
               padding: "10px 12px",
-              border: "1px solid #dcdcdc",
-              borderRadius: 8,
-              backgroundColor: "#fafaf3",
+              border: "1px solid rgba(15, 23, 42, 0.08)",
+              borderRadius: 16,
+              backgroundColor: "rgba(248, 250, 252, 0.92)",
             }}
           >
             <div
@@ -468,10 +529,10 @@ export default function Home() {
               }}
             >
               <div style={{ fontSize: 11, color: "#666666", lineHeight: 1.35 }}>
-                <div style={{ fontWeight: 600, color: "#000000", marginBottom: 2 }}>{ui.sourceFilterTitle}</div>
+                <div style={{ fontWeight: 700, color: "#0f172a", marginBottom: 2 }}>{ui.sourceFilterTitle}</div>
                 <div>{ui.sourceFilterHint}</div>
               </div>
-              <div style={{ fontSize: 11, color: "#666666", whiteSpace: "nowrap" }}>
+              <div style={{ fontSize: 11, color: "#64748b", whiteSpace: "nowrap" }}>
                 {sourceMode === "all"
                   ? `${availableSources.length} ${ui.sourceCountLabel}`
                   : `${selectedSources.length}/${availableSources.length} ${ui.sourceCountLabel}`}
@@ -490,11 +551,11 @@ export default function Home() {
                 type="button"
                 onClick={selectAllSources}
                 style={{
-                  border: "1px solid #cfcfc2",
+                  border: "1px solid rgba(15, 23, 42, 0.08)",
                   borderRadius: 999,
                   padding: "4px 10px",
-                  backgroundColor: sourceMode === "all" ? "#000000" : "#ffffff",
-                  color: sourceMode === "all" ? "#ffffff" : "#000000",
+                  backgroundColor: sourceMode === "all" ? "#0f172a" : "#ffffff",
+                  color: sourceMode === "all" ? "#ffffff" : "#0f172a",
                   fontSize: 11,
                   cursor: "pointer",
                   fontWeight: 600,
@@ -506,11 +567,11 @@ export default function Home() {
                 type="button"
                 onClick={clearSources}
                 style={{
-                  border: "1px solid #cfcfc2",
+                  border: "1px solid rgba(15, 23, 42, 0.08)",
                   borderRadius: 999,
                   padding: "4px 10px",
-                  backgroundColor: sourceMode === "custom" && selectedSources.length === 0 ? "#000000" : "#ffffff",
-                  color: sourceMode === "custom" && selectedSources.length === 0 ? "#ffffff" : "#000000",
+                  backgroundColor: sourceMode === "custom" && selectedSources.length === 0 ? "#0f172a" : "#ffffff",
+                  color: sourceMode === "custom" && selectedSources.length === 0 ? "#ffffff" : "#0f172a",
                   fontSize: 11,
                   cursor: "pointer",
                   fontWeight: 600,
@@ -532,8 +593,8 @@ export default function Home() {
                       gap: 6,
                       padding: "4px 8px",
                       borderRadius: 999,
-                      border: "1px solid #d0d0c8",
-                      backgroundColor: checked ? "#000000" : "#ffffff",
+                      border: "1px solid rgba(15, 23, 42, 0.08)",
+                      backgroundColor: checked ? "#0f172a" : "#ffffff",
                       color: checked ? "#ffffff" : "#000000",
                       fontSize: 11,
                       cursor: "pointer",
@@ -548,6 +609,18 @@ export default function Home() {
                       style={{ accentColor: "#000000" }}
                     />
                     <span>{formatSourceLabel(source)}</span>
+                    <span
+                      style={{
+                        padding: "2px 6px",
+                        borderRadius: 999,
+                        backgroundColor: checked ? "rgba(255,255,255,0.16)" : "rgba(15,23,42,0.06)",
+                        fontSize: 10,
+                        color: checked ? "rgba(255,255,255,0.92)" : "#64748b",
+                        fontWeight: 700,
+                      }}
+                    >
+                      {sourceCounts[source] || 0}
+                    </span>
                   </label>
                 );
               })}
@@ -555,7 +628,7 @@ export default function Home() {
           </div>
 
           <div style={{ overflowY: "auto", flex: 1, minHeight: 0 }}>
-            {visibleNews.map((n, i) => (
+            {visibleNews.map((n) => (
               <a
                 key={n.id}
                 href={n.url}
@@ -564,40 +637,89 @@ export default function Home() {
                 style={{
                   display: "block",
                   marginBottom: 12,
-                  padding: "12px 12px 12px 0",
-                  borderBottom: i === visibleNews.length - 1 ? "none" : "1px dashed #cccccc",
+                  padding: "14px",
+                  border: "1px solid rgba(15, 23, 42, 0.08)",
+                  backgroundColor: "#ffffff",
+                  boxShadow: "0 12px 30px rgba(15, 23, 42, 0.04)",
                   lineHeight: 1.35,
                   textDecoration: "none",
                   color: "inherit",
-                  borderRadius: 4,
+                  borderRadius: 16,
                 }}
                 onMouseOver={(e) => {
-                  e.currentTarget.style.backgroundColor = "#f3f3e8";
+                  e.currentTarget.style.backgroundColor = "#f8fafc";
                 }}
                 onMouseOut={(e) => {
-                  e.currentTarget.style.backgroundColor = "transparent";
+                  e.currentTarget.style.backgroundColor = "#ffffff";
                 }}
               >
-                <div style={{ display: "flex", gap: 10, alignItems: "baseline", flexWrap: "wrap" }}>
-                  <span style={{ fontSize: 12, color: "#666666", minWidth: 18 }}>
-                    {n.rank}.
+                <div style={{ display: "flex", gap: 10, alignItems: "flex-start", flexWrap: "wrap" }}>
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: 28,
+                      height: 28,
+                      borderRadius: 999,
+                      backgroundColor: "rgba(15, 23, 42, 0.06)",
+                      color: "#0f172a",
+                      fontSize: 12,
+                      fontWeight: 700,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {n.rank}
                   </span>
-                  <div style={{ fontSize: 14, flex: 1, minWidth: 0, color: "#000000" }}>
+                  <div style={{ fontSize: 15, flex: 1, minWidth: 0, color: "#0f172a", fontWeight: 700 }}>
                     <span style={{ wordBreak: "break-word" }}>{n.title}</span>
                   </div>
                 </div>
-                <div style={{ fontSize: 11, color: "#666666", marginTop: 6 }}>
-                  <span title={n.domain}>{n.domain}</span> ·{" "}
-                  <span title={n.source}>{formatSourceLabel(n.source)}</span> · {n.age}
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
+                  <span
+                    style={{
+                      padding: "3px 8px",
+                      borderRadius: 999,
+                      backgroundColor: "rgba(15, 23, 42, 0.05)",
+                      color: "#475569",
+                      fontSize: 11,
+                    }}
+                    title={n.domain}
+                  >
+                    {n.domain}
+                  </span>
+                  <span
+                    style={{
+                      padding: "3px 8px",
+                      borderRadius: 999,
+                      backgroundColor: "rgba(15, 23, 42, 0.05)",
+                      color: "#475569",
+                      fontSize: 11,
+                    }}
+                    title={n.source}
+                  >
+                    {formatSourceLabel(n.source)}
+                  </span>
+                  <span
+                    style={{
+                      padding: "3px 8px",
+                      borderRadius: 999,
+                      backgroundColor: "rgba(15, 23, 42, 0.05)",
+                      color: "#475569",
+                      fontSize: 11,
+                    }}
+                  >
+                    {n.age}
+                  </span>
                 </div>
                 <div
                   style={{
                     display: "flex",
                     gap: 10,
                     flexWrap: "wrap",
-                    marginTop: 6,
+                    marginTop: 10,
                     fontSize: 11,
-                    color: "#666666",
+                    color: "#475569",
                   }}
                 >
                   <span>
@@ -610,9 +732,9 @@ export default function Home() {
                 <div
                   style={{
                     marginTop: 8,
-                    fontSize: 12,
+                    fontSize: 13,
                     lineHeight: 1.45,
-                    color: "#444444",
+                    color: "#334155",
                   }}
                 >
                   {n.summary}
@@ -624,11 +746,12 @@ export default function Home() {
                 style={{
                   padding: 14,
                   textAlign: "center",
-                  color: "#666666",
+                  color: "#64748b",
                   fontStyle: "italic",
-                  border: "1px dashed #cccccc",
-                  borderRadius: 4,
+                  border: "1px dashed rgba(15, 23, 42, 0.18)",
+                  borderRadius: 16,
                   fontSize: 11,
+                  backgroundColor: "rgba(248, 250, 252, 0.85)",
                 }}
               >
                 {ui.noNews}
@@ -642,32 +765,41 @@ export default function Home() {
           style={{
             flex: 1,
             minWidth: 0,
-            padding: 12,
-            backgroundColor: "#f6f6ef",
+            padding: 16,
+            border: "1px solid rgba(15, 23, 42, 0.08)",
+            borderRadius: 20,
+            background:
+              "linear-gradient(180deg, rgba(255,255,255,0.88) 0%, rgba(255,255,255,0.72) 100%)",
+            boxShadow: "0 20px 50px rgba(15, 23, 42, 0.08)",
             display: "flex",
             flexDirection: "column",
             minHeight: 0,
+            backdropFilter: "blur(18px)",
           }}
         >
           <div
             style={{
-              marginBottom: 12,
+              marginBottom: 14,
               display: "flex",
-              alignItems: "baseline",
+              alignItems: "flex-end",
+              justifyContent: "space-between",
               gap: 10,
               flexWrap: "wrap",
             }}
           >
-            <h2 style={{ margin: 0, fontSize: 16, color: "#000000", fontWeight: "bold", lineHeight: 1.2 }}>
-              {ui.signalsTitle}
-            </h2>
-            <div style={{ fontSize: 10, color: "#666666", lineHeight: 1.2 }}>
-              {ui.signalsSubtitle}
+            <div>
+              <h2 style={{ margin: 0, fontSize: 18, color: "#0f172a", fontWeight: 800, lineHeight: 1.2 }}>
+                {ui.signalsTitle}
+              </h2>
+              <div style={{ marginTop: 4, fontSize: 12, color: "#64748b", lineHeight: 1.2 }}>
+                {ui.signalsSubtitle}
+              </div>
             </div>
+            <div style={{ fontSize: 11, color: "#64748b" }}>{signals.length} signals</div>
           </div>
 
           <div style={{ overflowY: "auto", flex: 1, minHeight: 0 }}>
-            {signals.map((s, i) => {
+            {signals.map((s) => {
               const colors = {
                 bullish: {
                   bg: "#f0fdf4",
@@ -692,8 +824,11 @@ export default function Home() {
                   key={s.asset}
                   style={{
                     marginBottom: 8,
-                    padding: "9px 0",
-                    borderBottom: i === signals.length - 1 ? "none" : "1px dashed #cccccc",
+                    padding: "14px 14px",
+                    border: "1px solid rgba(15, 23, 42, 0.08)",
+                    borderRadius: 16,
+                    backgroundColor: "#ffffff",
+                    boxShadow: "0 12px 30px rgba(15, 23, 42, 0.04)",
                   }}
                 >
                   <div
@@ -704,11 +839,11 @@ export default function Home() {
                       gap: 12,
                     }}
                   >
-                    <span style={{ fontWeight: 600, color: "#000000", fontSize: 13 }}>{s.asset}</span>
+                    <span style={{ fontWeight: 700, color: "#0f172a", fontSize: 14 }}>{s.asset}</span>
                     <span
                       style={{
-                        padding: "2px 6px",
-                        borderRadius: 3,
+                        padding: "4px 8px",
+                        borderRadius: 999,
                         backgroundColor: color.text,
                         color: "white",
                         fontSize: 9,
@@ -726,7 +861,7 @@ export default function Home() {
                         : s.direction.toUpperCase()}
                     </span>
                   </div>
-                  <div style={{ color: "#666666", marginTop: 4, fontSize: 11, lineHeight: 1.35 }}>{s.reason}</div>
+                  <div style={{ color: "#64748b", marginTop: 8, fontSize: 12, lineHeight: 1.45 }}>{s.reason}</div>
                 </div>
               );
             })}
@@ -735,11 +870,12 @@ export default function Home() {
                 style={{
                   padding: 14,
                   textAlign: "center",
-                  color: "#666666",
+                  color: "#64748b",
                   fontStyle: "italic",
-                  border: "1px dashed #cccccc",
-                  borderRadius: 4,
+                  border: "1px dashed rgba(15, 23, 42, 0.18)",
+                  borderRadius: 16,
                   fontSize: 11,
+                  backgroundColor: "rgba(248, 250, 252, 0.85)",
                 }}
               >
                 {ui.noSignals}
