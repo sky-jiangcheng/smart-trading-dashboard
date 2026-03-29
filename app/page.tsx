@@ -193,9 +193,18 @@ export default function Home() {
     acc[key] = (acc[key] || 0) + 1;
     return acc;
   }, {});
+  const sourceStats = availableSources.map((source) => {
+    const count = sourceCounts[source.url] || sourceCounts[source.label] || 0;
+
+    return {
+      ...source,
+      count,
+      hasNews: count > 0,
+    };
+  });
   const groupedSources = {
-    china: availableSources.filter((source) => isChineseSource(source.label) || isChineseSource(source.url)),
-    global: availableSources.filter((source) => !(isChineseSource(source.label) || isChineseSource(source.url))),
+    china: sourceStats.filter((source) => isChineseSource(source.label) || isChineseSource(source.url)),
+    global: sourceStats.filter((source) => !(isChineseSource(source.label) || isChineseSource(source.url))),
   };
   const visibleNews =
     sourceMode === "all"
@@ -215,13 +224,17 @@ export default function Home() {
     .slice(0, newsLimit);
   const visibleSourceCount = sourceMode === "all" ? availableSourceUrls.length : selectedSources.length;
   const visibleSourceLabel = sourceMode === "all" ? ui.selectAllSources : ui.sourceFilterTitle;
-  const filteredSources = availableSources.filter((source) => {
+  const filteredSources = sourceStats.filter((source) => {
     if (!sourceSearchTerm) {
       return true;
     }
 
     return `${source.label} ${source.url}`.toLowerCase().includes(sourceSearchTerm);
   });
+
+  function getSourceCount(source: { url: string; label: string }) {
+    return sourceCounts[source.url] || sourceCounts[source.label] || 0;
+  }
 
   function formatSourceLabel(source: string) {
     const catalogByUrl = sourceByUrl.get(source);
@@ -936,6 +949,8 @@ export default function Home() {
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
               {filteredSources.map((source) => {
                 const checked = sourceMode === "all" || selectedSources.includes(source.url);
+                const sourceCount = getSourceCount(source);
+                const isEmptySource = sourceCount === 0;
 
                 return (
                   <label
@@ -947,13 +962,20 @@ export default function Home() {
                       gap: 6,
                       padding: "4px 8px",
                       borderRadius: 999,
-                      border: "1px solid rgba(15, 23, 42, 0.08)",
-                      backgroundColor: checked ? "#0f172a" : "#ffffff",
-                      color: checked ? "#ffffff" : "#000000",
+                      border: `1px solid ${isEmptySource ? "rgba(148,163,184,0.24)" : "rgba(15, 23, 42, 0.08)"}`,
+                      backgroundColor: checked
+                        ? isEmptySource
+                          ? "rgba(148,163,184,0.16)"
+                          : "#0f172a"
+                        : isEmptySource
+                          ? "rgba(248,250,252,0.96)"
+                          : "#ffffff",
+                      color: checked ? "#ffffff" : isEmptySource ? "#64748b" : "#000000",
                       fontSize: 11,
                       cursor: "pointer",
                       userSelect: "none",
                       maxWidth: 260,
+                      opacity: isEmptySource ? 0.72 : 1,
                     }}
                     title={`${source.label} ${source.url}`}
                   >
@@ -961,7 +983,7 @@ export default function Home() {
                       type="checkbox"
                       checked={checked}
                       onChange={() => toggleSource(source.url)}
-                      style={{ accentColor: "#000000" }}
+                      style={{ accentColor: isEmptySource ? "#94a3b8" : "#000000" }}
                     />
                     <span
                       style={{
@@ -972,20 +994,38 @@ export default function Home() {
                         whiteSpace: "nowrap",
                         verticalAlign: "bottom",
                       }}
-                    >
-                      {formatSourceLabel(source.label)}
-                    </span>
+                      >
+                        {formatSourceLabel(source.label)}
+                      </span>
+                    {isEmptySource && (
+                      <span
+                        style={{
+                          padding: "2px 6px",
+                          borderRadius: 999,
+                          backgroundColor: checked ? "rgba(255,255,255,0.16)" : "rgba(148,163,184,0.14)",
+                          fontSize: 10,
+                          color: checked ? "rgba(255,255,255,0.92)" : "#64748b",
+                          fontWeight: 700,
+                        }}
+                      >
+                        {isZh ? "暂无新闻" : "No news"}
+                      </span>
+                    )}
                     <span
                       style={{
                         padding: "2px 6px",
                         borderRadius: 999,
-                        backgroundColor: checked ? "rgba(255,255,255,0.16)" : "rgba(15,23,42,0.06)",
+                        backgroundColor: checked
+                          ? "rgba(255,255,255,0.16)"
+                          : isEmptySource
+                            ? "rgba(148,163,184,0.14)"
+                            : "rgba(15,23,42,0.06)",
                         fontSize: 10,
                         color: checked ? "rgba(255,255,255,0.92)" : "#64748b",
                         fontWeight: 700,
                       }}
                     >
-                      {numberFormatter.format(sourceCounts[source.url] || sourceCounts[source.label] || 0)}
+                      {numberFormatter.format(sourceCount)}
                     </span>
                   </label>
                 );
