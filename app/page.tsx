@@ -122,9 +122,7 @@ export default function Home() {
   const signalsRef = useRef<SignalItem[]>([]);
   const [sourcePrefsLoaded, setSourcePrefsLoaded] = useState(false);
   const ui = COPY[lang];
-  const availableSources = Array.from(new Set(news.map((item) => item.source))).sort((a, b) =>
-    a.localeCompare(b, lang === "zh" ? "zh-Hans-CN" : "en"),
-  );
+  const availableSources = Array.from(new Set(news.map((item) => item.source)));
   const sourceSearchTerm = sourceSearch.trim().toLowerCase();
   const sourceCounts = news.reduce<Record<string, number>>((acc, item) => {
     acc[item.source] = (acc[item.source] || 0) + 1;
@@ -158,10 +156,6 @@ export default function Home() {
 
     return `${source.slice(0, 31)}...`;
   }
-
-  useEffect(() => {
-    document.documentElement.lang = lang;
-  }, [lang]);
 
   useEffect(() => {
     try {
