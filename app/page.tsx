@@ -390,7 +390,16 @@ export default function Home() {
             flexWrap: "wrap",
           }}
         >
-          <div style={{ display: "flex", flexDirection: "column", gap: 10, minWidth: 280 }}>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 10,
+              minWidth: 280,
+              minHeight: 98,
+              justifyContent: "center",
+            }}
+          >
             <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
               <div
                 style={{
@@ -454,8 +463,13 @@ export default function Home() {
                   marginTop: 8,
                   maxWidth: 720,
                   fontSize: 13,
-                  lineHeight: 1.5,
+                  lineHeight: 1.45,
                   color: "#475569",
+                  minHeight: 40,
+                  display: "-webkit-box",
+                  WebkitBoxOrient: "vertical",
+                  WebkitLineClamp: 2,
+                  overflow: "hidden",
                 }}
               >
                 {ui.headerDescription}
