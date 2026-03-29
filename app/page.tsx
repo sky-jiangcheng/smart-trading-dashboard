@@ -222,10 +222,12 @@ export default function Home() {
                 {isRefreshing ? ui.refreshing : ui.upToDate}
               </span>
             </div>
-            <button
-              type="button"
-              onClick={() => window.location.href = config.adminUrl}
+            <a
+              href={config.adminUrl}
               style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
                 border: "1px solid #d0d0c8",
                 backgroundColor: "#ffffff",
                 color: "#000000",
@@ -235,11 +237,13 @@ export default function Home() {
                 fontWeight: 600,
                 cursor: "pointer",
                 whiteSpace: "nowrap",
+                textDecoration: "none",
               }}
               aria-label="Go to admin console"
+              title="管理台"
             >
               管理台
-            </button>
+            </a>
             <button
               type="button"
               onClick={() => setLang((current) => (current === "en" ? "zh" : "en"))}
