@@ -25,6 +25,8 @@ type SignalItem = {
 
 type Lang = "en" | "zh";
 
+const SOURCE_STORAGE_KEY = "investment-dashboard:selected-sources";
+
 const COPY: Record<
   Lang,
   {
@@ -40,6 +42,12 @@ const COPY: Record<
     pointsLabel: string;
     commentsLabel: string;
     noSignals: string;
+    noNews: string;
+    sourceFilterTitle: string;
+    sourceFilterHint: string;
+    selectAllSources: string;
+    clearSources: string;
+    sourceCountLabel: string;
     toggleLabel: string;
   }
 > = {
@@ -57,6 +65,12 @@ const COPY: Record<
     pointsLabel: "points",
     commentsLabel: "comments",
     noSignals: "No signals generated from current news",
+    noNews: "No news matches the selected sources",
+    sourceFilterTitle: "News sources",
+    sourceFilterHint: "Pick one or more feeds to focus the list.",
+    selectAllSources: "Select all",
+    clearSources: "Clear",
+    sourceCountLabel: "sources",
     toggleLabel: "中文",
   },
   zh: {
@@ -73,6 +87,12 @@ const COPY: Record<
     pointsLabel: "热度",
     commentsLabel: "评论",
     noSignals: "当前新闻暂无可生成的信号",
+    noNews: "当前所选来源暂无新闻",
+    sourceFilterTitle: "新闻来源",
+    sourceFilterHint: "可勾选一个或多个来源来聚焦新闻列表。",
+    selectAllSources: "全选",
+    clearSources: "清空",
+    sourceCountLabel: "个来源",
     toggleLabel: "EN",
   },
 };
@@ -82,13 +102,46 @@ export default function Home() {
   const [signals, setSignals] = useState<SignalItem[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(true);
   const [lang, setLang] = useState<Lang>("en");
+  const [sourceMode, setSourceMode] = useState<"all" | "custom">("all");
+  const [selectedSources, setSelectedSources] = useState<string[]>([]);
   const newsRef = useRef<NewsItem[]>([]);
   const signalsRef = useRef<SignalItem[]>([]);
+  const [sourcePrefsLoaded, setSourcePrefsLoaded] = useState(false);
   const ui = COPY[lang];
+  const availableSources = Array.from(new Set(news.map((item) => item.source))).sort((a, b) =>
+    a.localeCompare(b, lang === "zh" ? "zh-Hans-CN" : "en"),
+  );
+  const visibleNews =
+    sourceMode === "all" ? news : news.filter((item) => selectedSources.includes(item.source));
 
   useEffect(() => {
     document.documentElement.lang = lang;
   }, [lang]);
+
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem(SOURCE_STORAGE_KEY);
+      if (!stored) {
+        setSourcePrefsLoaded(true);
+        return;
+      }
+
+      const parsed = JSON.parse(stored);
+      if (parsed && typeof parsed === "object") {
+        const nextMode = parsed.mode === "custom" ? "custom" : "all";
+        const nextSources = Array.isArray(parsed.sources)
+          ? parsed.sources.filter((value: unknown) => typeof value === "string")
+          : [];
+
+        setSourceMode(nextMode);
+        setSelectedSources(nextSources);
+      }
+    } catch {
+      // Ignore malformed saved preferences.
+    } finally {
+      setSourcePrefsLoaded(true);
+    }
+  }, []);
 
   useEffect(() => {
     newsRef.current = news;
@@ -99,6 +152,44 @@ export default function Home() {
   }, [signals]);
 
   useEffect(() => {
+    if (availableSources.length === 0) {
+      return;
+    }
+
+    setSelectedSources((current) => {
+      if (sourceMode === "all") {
+        if (current.length === availableSources.length && current.every((source, index) => source === availableSources[index])) {
+          return current;
+        }
+
+        return availableSources;
+      }
+
+      const next = current.filter((source) => availableSources.includes(source));
+      if (next.length === current.length && next.every((source, index) => source === current[index])) {
+        return current;
+      }
+
+      return next;
+    });
+  }, [availableSources, sourceMode]);
+
+  useEffect(() => {
+    if (!sourcePrefsLoaded) {
+      return;
+    }
+
+    try {
+      window.localStorage.setItem(
+        SOURCE_STORAGE_KEY,
+        JSON.stringify({ mode: sourceMode, sources: selectedSources }),
+      );
+    } catch {
+      // Ignore storage failures.
+    }
+  }, [selectedSources, sourceMode, sourcePrefsLoaded]);
+
+  useEffect(() => {
     let cancelled = false;
 
     async function load() {
@@ -106,8 +197,8 @@ export default function Home() {
 
       try {
         const [newsRes, signalsRes] = await Promise.all([
-          fetch("https://smart-trading-api.vercel.app/news"),
-          fetch("https://smart-trading-api.vercel.app/signals"),
+          fetch(`${config.apiUrl}/news`),
+          fetch(`${config.apiUrl}/signals`),
         ]);
 
         const [newsData, signalData] = await Promise.all([
@@ -144,6 +235,29 @@ export default function Home() {
       clearInterval(interval);
     };
   }, []);
+
+  function selectAllSources() {
+    setSourceMode("all");
+    setSelectedSources(availableSources);
+  }
+
+  function clearSources() {
+    setSourceMode("custom");
+    setSelectedSources([]);
+  }
+
+  function toggleSource(source: string) {
+    setSourceMode("custom");
+    setSelectedSources((current) => {
+      const base = sourceMode === "all" ? availableSources : current;
+
+      if (base.includes(source)) {
+        return base.filter((item) => item !== source);
+      }
+
+      return [...base, source];
+    });
+  }
 
   return (
     <div
@@ -313,8 +427,112 @@ export default function Home() {
             </div>
           </div>
 
+          <div
+            style={{
+              marginBottom: 12,
+              padding: "10px 12px",
+              border: "1px solid #dcdcdc",
+              borderRadius: 8,
+              backgroundColor: "#fafaf3",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: 12,
+                flexWrap: "wrap",
+              }}
+            >
+              <div style={{ fontSize: 11, color: "#666666", lineHeight: 1.35 }}>
+                <div style={{ fontWeight: 600, color: "#000000", marginBottom: 2 }}>{ui.sourceFilterTitle}</div>
+                <div>{ui.sourceFilterHint}</div>
+              </div>
+              <div style={{ fontSize: 11, color: "#666666", whiteSpace: "nowrap" }}>
+                {sourceMode === "all"
+                  ? `${availableSources.length} ${ui.sourceCountLabel}`
+                  : `${selectedSources.length}/${availableSources.length} ${ui.sourceCountLabel}`}
+              </div>
+            </div>
+            <div
+              style={{
+                display: "flex",
+                gap: 8,
+                flexWrap: "wrap",
+                marginTop: 10,
+                alignItems: "center",
+              }}
+            >
+              <button
+                type="button"
+                onClick={selectAllSources}
+                style={{
+                  border: "1px solid #cfcfc2",
+                  borderRadius: 999,
+                  padding: "4px 10px",
+                  backgroundColor: sourceMode === "all" ? "#000000" : "#ffffff",
+                  color: sourceMode === "all" ? "#ffffff" : "#000000",
+                  fontSize: 11,
+                  cursor: "pointer",
+                  fontWeight: 600,
+                }}
+              >
+                {ui.selectAllSources}
+              </button>
+              <button
+                type="button"
+                onClick={clearSources}
+                style={{
+                  border: "1px solid #cfcfc2",
+                  borderRadius: 999,
+                  padding: "4px 10px",
+                  backgroundColor: sourceMode === "custom" && selectedSources.length === 0 ? "#000000" : "#ffffff",
+                  color: sourceMode === "custom" && selectedSources.length === 0 ? "#ffffff" : "#000000",
+                  fontSize: 11,
+                  cursor: "pointer",
+                  fontWeight: 600,
+                }}
+              >
+                {ui.clearSources}
+              </button>
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
+              {availableSources.map((source) => {
+                const checked = sourceMode === "all" || selectedSources.includes(source);
+
+                return (
+                  <label
+                    key={source}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                      padding: "4px 8px",
+                      borderRadius: 999,
+                      border: "1px solid #d0d0c8",
+                      backgroundColor: checked ? "#000000" : "#ffffff",
+                      color: checked ? "#ffffff" : "#000000",
+                      fontSize: 11,
+                      cursor: "pointer",
+                      userSelect: "none",
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggleSource(source)}
+                      style={{ accentColor: "#000000" }}
+                    />
+                    <span>{source}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+
           <div style={{ overflowY: "auto", flex: 1, minHeight: 0 }}>
-            {news.map((n, i) => (
+            {visibleNews.map((n, i) => (
               <a
                 key={n.id}
                 href={n.url}
@@ -324,7 +542,7 @@ export default function Home() {
                   display: "block",
                   marginBottom: 12,
                   padding: "12px 12px 12px 0",
-                  borderBottom: i === news.length - 1 ? "none" : "1px dashed #cccccc",
+                  borderBottom: i === visibleNews.length - 1 ? "none" : "1px dashed #cccccc",
                   lineHeight: 1.35,
                   textDecoration: "none",
                   color: "inherit",
@@ -377,6 +595,21 @@ export default function Home() {
                 </div>
               </a>
             ))}
+            {visibleNews.length === 0 && (
+              <div
+                style={{
+                  padding: 14,
+                  textAlign: "center",
+                  color: "#666666",
+                  fontStyle: "italic",
+                  border: "1px dashed #cccccc",
+                  borderRadius: 4,
+                  fontSize: 11,
+                }}
+              >
+                {ui.noNews}
+              </div>
+            )}
           </div>
         </section>
 
