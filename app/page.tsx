@@ -32,10 +32,8 @@ type SourceItem = {
 type Lang = "en" | "zh";
 
 const SOURCE_STORAGE_KEY = "investment-dashboard:selected-sources";
-const NEWS_LIMIT_STORAGE_KEY = "investment-dashboard:news-limit";
 const DATA_CACHE_KEY = "investment-dashboard:data-cache";
 const DATA_CACHE_TTL_MS = 2 * 60 * 1000;
-const NEWS_LIMIT_OPTIONS = [50, 100, 200] as const;
 
 const SOURCE_LABEL_OVERRIDES: Array<[RegExp, string]> = [
   [/cnbc/i, "CNBC"],
@@ -78,6 +76,7 @@ const COPY: Record<
     selectAllSources: string;
     clearSources: string;
     sourceCountLabel: string;
+    newsLimitHint: string;
     toggleLabel: string;
   }
 > = {
@@ -93,7 +92,7 @@ const COPY: Record<
     newsTitle: "🌍 Global News",
     newsSubtitle: "Live feed refreshed every 5 seconds",
     newsCountLabel: "items",
-    newsLimitLabel: "News count",
+    newsLimitLabel: "Display cap",
     signalsTitle: "📈 Investment Signals",
     signalsSubtitle: "Signals inferred from the headlines above",
     signalsCountLabel: "signals",
@@ -108,6 +107,7 @@ const COPY: Record<
     selectAllSources: "Select all",
     clearSources: "Clear",
     sourceCountLabel: "sources",
+    newsLimitHint: "Managed in Admin",
     toggleLabel: "中文",
   },
   zh: {
@@ -122,7 +122,7 @@ const COPY: Record<
     newsTitle: "🌍 全球新闻",
     newsSubtitle: "每 5 秒刷新一次",
     newsCountLabel: "条",
-    newsLimitLabel: "新闻条数",
+    newsLimitLabel: "展示上限",
     signalsTitle: "📈 投资信号",
     signalsSubtitle: "根据上方新闻自动生成信号",
     signalsCountLabel: "条信号",
@@ -137,6 +137,7 @@ const COPY: Record<
     selectAllSources: "全选",
     clearSources: "清空",
     sourceCountLabel: "个来源",
+    newsLimitHint: "由管理台配置",
     toggleLabel: "EN",
   },
 };
@@ -281,14 +282,6 @@ export default function Home() {
 
   function hydrateCachedData() {
     try {
-      const cachedNewsLimit = window.localStorage.getItem(NEWS_LIMIT_STORAGE_KEY);
-      if (cachedNewsLimit) {
-        const parsedLimit = Number(cachedNewsLimit);
-        if (NEWS_LIMIT_OPTIONS.includes(parsedLimit as (typeof NEWS_LIMIT_OPTIONS)[number])) {
-          setNewsLimit(parsedLimit);
-        }
-      }
-
       const cached = window.localStorage.getItem(DATA_CACHE_KEY);
       if (!cached) {
         return;
@@ -426,30 +419,24 @@ export default function Home() {
   }, [selectedSources, sourceMode, sourcePrefsLoaded]);
 
   useEffect(() => {
-    try {
-      window.localStorage.setItem(NEWS_LIMIT_STORAGE_KEY, String(newsLimit));
-    } catch {
-      // Ignore storage failures.
-    }
-  }, [newsLimit]);
-
-  useEffect(() => {
     let cancelled = false;
 
     async function load() {
       setIsRefreshing(true);
 
       try {
-        const [newsRes, signalsRes, sourcesRes] = await Promise.all([
+        const [newsRes, signalsRes, sourcesRes, settingsRes] = await Promise.all([
           fetch(`${config.apiUrl}/news`),
           fetch(`${config.apiUrl}/signals`),
           fetch(`${config.apiUrl}/sources`),
+          fetch(`${config.apiUrl}/settings`),
         ]);
 
-        const [newsData, signalData, sourceData] = await Promise.all([
+        const [newsData, signalData, sourceData, settingsData] = await Promise.all([
           newsRes.json(),
           signalsRes.json(),
           sourcesRes.json(),
+          settingsRes.json(),
         ]);
 
         if (cancelled) {
@@ -459,6 +446,7 @@ export default function Home() {
         const nextNews = Array.isArray(newsData) ? newsData : [];
         const nextSignals = Array.isArray(signalData) ? signalData : [];
         const nextSources = Array.isArray(sourceData?.sources) ? sourceData.sources : [];
+        const nextNewsLimit = Number(settingsData?.newsLimit);
 
         if (nextNews.length > 0 || newsRef.current.length === 0) {
           setNews(nextNews);
@@ -474,6 +462,10 @@ export default function Home() {
               return Boolean(item) && typeof item === "object" && typeof (item as SourceItem).url === "string" && typeof (item as SourceItem).label === "string";
             }),
           );
+        }
+
+        if ([50, 100, 200].includes(nextNewsLimit)) {
+          setNewsLimit(nextNewsLimit);
         }
 
         try {
@@ -532,15 +524,6 @@ export default function Home() {
 
       return [...base, sourceUrl];
     });
-  }
-
-  function handleNewsLimitChange(value: string) {
-    const nextLimit = Number(value);
-    if (NEWS_LIMIT_OPTIONS.includes(nextLimit as (typeof NEWS_LIMIT_OPTIONS)[number])) {
-      startTransition(() => {
-        setNewsLimit(nextLimit);
-      });
-    }
   }
 
   return (
@@ -701,42 +684,13 @@ export default function Home() {
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "center",
-                gap: 6,
               }}
             >
-              <div style={{ fontSize: 11, color: "#64748b", fontWeight: 600 }}>{ui.newsLimitLabel}</div>
-              <div
-                role="tablist"
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: `repeat(${NEWS_LIMIT_OPTIONS.length}, minmax(0, 1fr))`,
-                  gap: 6,
-                }}
-              >
-                {NEWS_LIMIT_OPTIONS.map((option) => (
-                  <button
-                    key={option}
-                    type="button"
-                    aria-pressed={newsLimit === option}
-                    className="soft-switch"
-                    onClick={() => handleNewsLimitChange(String(option))}
-                    style={{
-                      border: "1px solid rgba(15,23,42,0.12)",
-                      borderRadius: 10,
-                      backgroundColor: newsLimit === option ? "#0f172a" : "#ffffff",
-                      color: newsLimit === option ? "#ffffff" : "#0f172a",
-                      fontSize: 11,
-                      fontWeight: 700,
-                      padding: "8px 10px",
-                      minHeight: 36,
-                      cursor: "pointer",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {numberFormatter.format(option)}
-                  </button>
-                ))}
+              <div style={{ fontSize: 11, color: "#64748b", marginBottom: 4, fontWeight: 600 }}>
+                {ui.newsLimitLabel}
               </div>
+              <div style={{ fontSize: 13, color: "#0f172a", fontWeight: 700 }}>{numberFormatter.format(newsLimit)}</div>
+              <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>{ui.newsLimitHint}</div>
             </div>
             <a
               href={config.adminUrl}
