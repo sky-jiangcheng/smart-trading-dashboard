@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type NewsItem = {
   id: string;
@@ -25,27 +25,54 @@ type SignalItem = {
 export default function Home() {
   const [news, setNews] = useState<NewsItem[]>([]);
   const [signals, setSignals] = useState<SignalItem[]>([]);
+  const [isRefreshing, setIsRefreshing] = useState(true);
+  const newsRef = useRef<NewsItem[]>([]);
+  const signalsRef = useRef<SignalItem[]>([]);
+
+  useEffect(() => {
+    newsRef.current = news;
+  }, [news]);
+
+  useEffect(() => {
+    signalsRef.current = signals;
+  }, [signals]);
 
   useEffect(() => {
     let cancelled = false;
 
     async function load() {
-      const [newsRes, signalsRes] = await Promise.all([
-        fetch("https://smart-trading-api.vercel.app/news"),
-        fetch("https://smart-trading-api.vercel.app/signals"),
-      ]);
+      setIsRefreshing(true);
 
-      const [newsData, signalData] = await Promise.all([
-        newsRes.json(),
-        signalsRes.json(),
-      ]);
+      try {
+        const [newsRes, signalsRes] = await Promise.all([
+          fetch("https://smart-trading-api.vercel.app/news"),
+          fetch("https://smart-trading-api.vercel.app/signals"),
+        ]);
 
-      if (cancelled) {
-        return;
+        const [newsData, signalData] = await Promise.all([
+          newsRes.json(),
+          signalsRes.json(),
+        ]);
+
+        if (cancelled) {
+          return;
+        }
+
+        const nextNews = Array.isArray(newsData) ? newsData : [];
+        const nextSignals = Array.isArray(signalData) ? signalData : [];
+
+        if (nextNews.length > 0 || newsRef.current.length === 0) {
+          setNews(nextNews);
+        }
+
+        if (nextSignals.length > 0 || signalsRef.current.length === 0) {
+          setSignals(nextSignals);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsRefreshing(false);
+        }
       }
-
-      setNews(Array.isArray(newsData) ? newsData : []);
-      setSignals(Array.isArray(signalData) ? signalData : []);
     }
 
     load();
@@ -121,6 +148,9 @@ export default function Home() {
           >
             A lightweight trading dashboard that keeps headlines and signals in
             separate lanes, so the page stays readable at a glance.
+            <span style={{ marginLeft: 8, color: "#999999" }}>
+              {isRefreshing ? "Refreshing" : "Up to date"}
+            </span>
           </div>
         </div>
       </header>
