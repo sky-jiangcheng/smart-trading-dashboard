@@ -23,6 +23,11 @@ type SignalItem = {
   reason: string;
 };
 
+type SourceItem = {
+  url: string;
+  label: string;
+};
+
 type Lang = "en" | "zh";
 
 const SOURCE_STORAGE_KEY = "investment-dashboard:selected-sources";
@@ -131,6 +136,7 @@ const COPY: Record<
 export default function Home() {
   const [news, setNews] = useState<NewsItem[]>([]);
   const [signals, setSignals] = useState<SignalItem[]>([]);
+  const [sourceCatalog, setSourceCatalog] = useState<SourceItem[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(true);
   const [lang, setLang] = useState<Lang>("en");
   const [sourceMode, setSourceMode] = useState<"all" | "custom">("all");
@@ -146,29 +152,65 @@ export default function Home() {
     animation: "lang-swap 180ms ease",
     willChange: "opacity, transform",
   } as const;
-  const availableSources = Array.from(new Set(news.map((item) => item.source)));
+  function buildFallbackSourceCatalog(items: NewsItem[]) {
+    const seen = new Set<string>();
+    const catalog: SourceItem[] = [];
+
+    items.forEach((item) => {
+      const url = item.sourceUrl || item.source;
+      if (!url || seen.has(url)) {
+        return;
+      }
+
+      seen.add(url);
+      catalog.push({
+        url,
+        label: item.source,
+      });
+    });
+
+    return catalog;
+  }
+
+  const availableSources = sourceCatalog.length > 0 ? sourceCatalog : buildFallbackSourceCatalog(news);
+  const availableSourceUrls = availableSources.map((item) => item.url);
+  const sourceByUrl = new Map(availableSources.map((item) => [item.url, item]));
+  const sourceByLabel = new Map(availableSources.map((item) => [item.label, item]));
   const sourceSearchTerm = sourceSearch.trim().toLowerCase();
   const sourceCounts = news.reduce<Record<string, number>>((acc, item) => {
-    acc[item.source] = (acc[item.source] || 0) + 1;
+    const key = item.sourceUrl || item.source;
+    acc[key] = (acc[key] || 0) + 1;
     return acc;
   }, {});
   const groupedSources = {
-    china: availableSources.filter((source) => isChineseSource(source)),
-    global: availableSources.filter((source) => !isChineseSource(source)),
+    china: availableSources.filter((source) => isChineseSource(source.label) || isChineseSource(source.url)),
+    global: availableSources.filter((source) => !(isChineseSource(source.label) || isChineseSource(source.url))),
   };
   const visibleNews =
-    sourceMode === "all" ? news : news.filter((item) => selectedSources.includes(item.source));
-  const visibleSourceCount = sourceMode === "all" ? availableSources.length : selectedSources.length;
+    sourceMode === "all"
+      ? news
+      : news.filter((item) => selectedSources.includes(item.sourceUrl || item.source));
+  const visibleSourceCount = sourceMode === "all" ? availableSourceUrls.length : selectedSources.length;
   const visibleSourceLabel = sourceMode === "all" ? ui.selectAllSources : ui.sourceFilterTitle;
   const filteredSources = availableSources.filter((source) => {
     if (!sourceSearchTerm) {
       return true;
     }
 
-    return `${source} ${formatSourceLabel(source)}`.toLowerCase().includes(sourceSearchTerm);
+    return `${source.label} ${source.url}`.toLowerCase().includes(sourceSearchTerm);
   });
 
   function formatSourceLabel(source: string) {
+    const catalogByUrl = sourceByUrl.get(source);
+    if (catalogByUrl) {
+      return catalogByUrl.label;
+    }
+
+    const catalogByLabel = sourceByLabel.get(source);
+    if (catalogByLabel) {
+      return catalogByLabel.label;
+    }
+
     const override = SOURCE_LABEL_OVERRIDES.find(([pattern]) => pattern.test(source));
     if (override) {
       return override[1];
@@ -216,6 +258,26 @@ export default function Home() {
     return item.age;
   }
 
+  function normalizeSourceSelection(values: string[], options: SourceItem[]) {
+    const byUrl = new Map(options.map((item) => [item.url, item]));
+    const byLabel = new Map(options.map((item) => [item.label, item]));
+    const normalized: string[] = [];
+
+    values.forEach((value) => {
+      if (byUrl.has(value)) {
+        normalized.push(value);
+        return;
+      }
+
+      const matched = byLabel.get(value);
+      if (matched) {
+        normalized.push(matched.url);
+      }
+    });
+
+    return Array.from(new Set(normalized));
+  }
+
   useEffect(() => {
     document.documentElement.lang = isZh ? "zh-CN" : "en";
   }, [isZh]);
@@ -259,22 +321,24 @@ export default function Home() {
     }
 
     setSelectedSources((current) => {
+      const normalized = normalizeSourceSelection(current, availableSources);
+
       if (sourceMode === "all") {
-        if (current.length === availableSources.length && current.every((source, index) => source === availableSources[index])) {
-          return current;
+        if (normalized.length === availableSourceUrls.length && normalized.every((source, index) => source === availableSourceUrls[index])) {
+          return normalized;
         }
 
-        return availableSources;
+        return availableSourceUrls;
       }
 
-      const next = current.filter((source) => availableSources.includes(source));
-      if (next.length === current.length && next.every((source, index) => source === current[index])) {
-        return current;
+      const next = normalized.filter((source) => availableSourceUrls.includes(source));
+      if (next.length === normalized.length && next.every((source, index) => source === normalized[index])) {
+        return normalized;
       }
 
       return next;
     });
-  }, [availableSources, sourceMode]);
+  }, [availableSourceUrls, availableSources, sourceMode]);
 
   useEffect(() => {
     if (!sourcePrefsLoaded) {
@@ -297,15 +361,17 @@ export default function Home() {
     async function load() {
       setIsRefreshing(true);
 
-      try {
-        const [newsRes, signalsRes] = await Promise.all([
+        try {
+        const [newsRes, signalsRes, sourcesRes] = await Promise.all([
           fetch(`${config.apiUrl}/news`),
           fetch(`${config.apiUrl}/signals`),
+          fetch(`${config.apiUrl}/sources`),
         ]);
 
-        const [newsData, signalData] = await Promise.all([
+        const [newsData, signalData, sourceData] = await Promise.all([
           newsRes.json(),
           signalsRes.json(),
+          sourcesRes.json(),
         ]);
 
         if (cancelled) {
@@ -314,6 +380,7 @@ export default function Home() {
 
         const nextNews = Array.isArray(newsData) ? newsData : [];
         const nextSignals = Array.isArray(signalData) ? signalData : [];
+        const nextSources = Array.isArray(sourceData?.sources) ? sourceData.sources : [];
 
         if (nextNews.length > 0 || newsRef.current.length === 0) {
           setNews(nextNews);
@@ -321,6 +388,16 @@ export default function Home() {
 
         if (nextSignals.length > 0 || signalsRef.current.length === 0) {
           setSignals(nextSignals);
+        }
+
+        if (nextSources.length > 0 || sourceCatalog.length === 0) {
+          setSourceCatalog(
+            nextSources
+              .filter((item: unknown): item is SourceItem => {
+                return Boolean(item) && typeof item === "object" && typeof (item as SourceItem).url === "string" && typeof (item as SourceItem).label === "string";
+              })
+              .map((item: SourceItem) => ({ url: item.url, label: item.label })),
+          );
         }
       } finally {
         if (!cancelled) {
@@ -336,11 +413,11 @@ export default function Home() {
       cancelled = true;
       clearInterval(interval);
     };
-  }, []);
+  }, [sourceCatalog.length]);
 
   function selectAllSources() {
     setSourceMode("all");
-    setSelectedSources(availableSources);
+    setSelectedSources(availableSourceUrls);
   }
 
   function clearSources() {
@@ -351,19 +428,19 @@ export default function Home() {
   function focusSourceGroup(group: "china" | "global") {
     const nextSources = groupedSources[group];
     setSourceMode("custom");
-    setSelectedSources(nextSources);
+    setSelectedSources(nextSources.map((source) => source.url));
   }
 
-  function toggleSource(source: string) {
+  function toggleSource(sourceUrl: string) {
     setSourceMode("custom");
     setSelectedSources((current) => {
-      const base = sourceMode === "all" ? availableSources : current;
+      const base = sourceMode === "all" ? availableSourceUrls : current;
 
-      if (base.includes(source)) {
-        return base.filter((item) => item !== source);
+      if (base.includes(sourceUrl)) {
+        return base.filter((item) => item !== sourceUrl);
       }
 
-      return [...base, source];
+      return [...base, sourceUrl];
     });
   }
 
@@ -635,8 +712,8 @@ export default function Home() {
               </div>
               <div style={{ fontSize: 11, color: "#64748b", whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>
                 {sourceMode === "all"
-                  ? `${numberFormatter.format(availableSources.length)} ${ui.sourceCountLabel}`
-                  : `${numberFormatter.format(selectedSources.length)}/${numberFormatter.format(availableSources.length)} ${ui.sourceCountLabel}`}
+                  ? `${numberFormatter.format(availableSourceUrls.length)} ${ui.sourceCountLabel}`
+                  : `${numberFormatter.format(selectedSources.length)}/${numberFormatter.format(availableSourceUrls.length)} ${ui.sourceCountLabel}`}
               </div>
             </div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
@@ -727,11 +804,11 @@ export default function Home() {
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
               {filteredSources.map((source) => {
-                const checked = sourceMode === "all" || selectedSources.includes(source);
+                const checked = sourceMode === "all" || selectedSources.includes(source.url);
 
                 return (
                   <label
-                    key={source}
+                    key={source.url}
                     style={{
                       display: "inline-flex",
                       alignItems: "center",
@@ -746,12 +823,12 @@ export default function Home() {
                       userSelect: "none",
                       maxWidth: 260,
                     }}
-                    title={source}
+                    title={`${source.label} ${source.url}`}
                   >
                     <input
                       type="checkbox"
                       checked={checked}
-                      onChange={() => toggleSource(source)}
+                      onChange={() => toggleSource(source.url)}
                       style={{ accentColor: "#000000" }}
                     />
                     <span
@@ -764,7 +841,7 @@ export default function Home() {
                         verticalAlign: "bottom",
                       }}
                     >
-                      {formatSourceLabel(source)}
+                      {formatSourceLabel(source.label)}
                     </span>
                     <span
                       style={{
@@ -776,7 +853,7 @@ export default function Home() {
                         fontWeight: 700,
                       }}
                     >
-                      {numberFormatter.format(sourceCounts[source] || 0)}
+                      {numberFormatter.format(sourceCounts[source.url] || sourceCounts[source.label] || 0)}
                     </span>
                   </label>
                 );
