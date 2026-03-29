@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { config } from "../lib/config";
 
 type NewsItem = {
@@ -32,6 +32,7 @@ type SourceItem = {
 type Lang = "en" | "zh";
 
 const SOURCE_STORAGE_KEY = "investment-dashboard:selected-sources";
+const LANGUAGE_STORAGE_KEY = "investment-dashboard:language";
 const DATA_CACHE_KEY = "investment-dashboard:data-cache";
 const DATA_CACHE_TTL_MS = 2 * 60 * 1000;
 
@@ -339,10 +340,27 @@ export default function Home() {
 
   useEffect(() => {
     document.documentElement.lang = isZh ? "zh-CN" : "en";
-  }, [isZh]);
+
+    try {
+      window.localStorage.setItem(LANGUAGE_STORAGE_KEY, lang);
+    } catch {
+      // Ignore storage failures.
+    }
+  }, [lang, isZh]);
 
   useEffect(() => {
     hydrateCachedData();
+  }, []);
+
+  useEffect(() => {
+    try {
+      const storedLang = window.localStorage.getItem(LANGUAGE_STORAGE_KEY);
+      if (storedLang === "en" || storedLang === "zh") {
+        setLang(storedLang);
+      }
+    } catch {
+      // Ignore storage failures.
+    }
   }, []);
 
   useEffect(() => {
@@ -721,11 +739,7 @@ export default function Home() {
             <button
               type="button"
               className="soft-switch"
-              onClick={() =>
-                startTransition(() => {
-                  setLang((current) => (current === "en" ? "zh" : "en"));
-                })
-              }
+              onClick={() => setLang((current) => (current === "en" ? "zh" : "en"))}
               style={{
                 border: "1px solid rgba(15, 23, 42, 0.08)",
                 backgroundColor: "rgba(255,255,255,0.86)",
