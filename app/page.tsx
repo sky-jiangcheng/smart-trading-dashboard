@@ -18,21 +18,26 @@ export default function Home() {
   const [news, setNews] = useState<News[]>([]);
   const [signals, setSignals] = useState<Signal[]>([]);
 
-  useEffect(() => {
-    // mock 新闻
-    setNews([
-      { title: "Oil supply disruption in Middle East", source: "Reuters", time: "2m ago" },
-      { title: "Fed signals potential rate hike", source: "Bloomberg", time: "5m ago" },
-      { title: "AI sector continues rapid growth", source: "TechCrunch", time: "10m ago" },
-    ]);
 
-    // mock 信号
-    setSignals([
-      { asset: "Crude Oil", direction: "bullish", reason: "Supply disruption" },
-      { asset: "NASDAQ", direction: "bearish", reason: "Rate hike pressure" },
-      { asset: "Gold", direction: "bullish", reason: "Inflation hedge" },
-    ]);
-  }, []);
+    
+
+useEffect(() => {
+  async function load() {
+    const newsRes = await fetch("https://smart-trading-api.vercel.app/news");
+    const newsData = await newsRes.json();
+
+    const sigRes = await fetch("https://smart-trading-api.vercel.app/signals");
+    const sigData = await sigRes.json();
+
+    setNews(newsData);
+    setSignals(sigData);
+  }
+
+  load();
+
+  const interval = setInterval(load, 5000);
+  return () => clearInterval(interval);
+}, []);
 
   return (
     <div style={{ display: "flex", height: "100vh", fontFamily: "Arial" }}>
