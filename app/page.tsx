@@ -2,116 +2,59 @@
 
 import { useEffect, useState } from "react";
 
-type News = {
+type NewsItem = {
+  id: string;
+  rank: number;
   title: string;
+  url: string;
+  domain: string;
   source: string;
-  time: string;
-  url?: string;
+  points: number;
+  comments: number;
+  age: string;
+  publishedAt: string | null;
+  summary: string;
 };
 
-type Signal = {
+type SignalItem = {
   asset: string;
   direction: "bullish" | "bearish" | "neutral";
   reason: string;
 };
 
-// 可扩展的信号规则配置
-interface SignalRule {
-  // 匹配关键词（小写）
-  keyword: string;
-  // 输出信号
-  signal: Omit<Signal, "reason"> & { reasonTemplate: string };
-}
-
-// 在这里添加/修改规则即可，不需要改逻辑
-const SIGNAL_RULES: SignalRule[] = [
-  {
-    keyword: "oil",
-    signal: {
-      asset: "Crude Oil",
-      direction: "bullish",
-      reasonTemplate: "Oil-related news → Market attention",
-    },
-  },
-  {
-    keyword: "inflation",
-    signal: {
-      asset: "Gold",
-      direction: "bullish",
-      reasonTemplate: "Inflation expectations → Inflation hedge",
-    },
-  },
-  {
-    keyword: "rate",
-    signal: {
-      asset: "NASDAQ",
-      direction: "bearish",
-      reasonTemplate: "Interest rate concerns → Growth stock pressure",
-    },
-  },
-  {
-    keyword: "gold",
-    signal: {
-      asset: "Gold",
-      direction: "bullish",
-      reasonTemplate: "Gold-specific news → Market momentum",
-    },
-  },
-  {
-    keyword: "nasdaq",
-    signal: {
-      asset: "NASDAQ",
-      direction: "bullish",
-      reasonTemplate: "NASDAQ-specific news → Tech sector momentum",
-    },
-  },
-];
-
-// 根据新闻生成信号，同一资产只保留一个信号
-function generateSignals(newsList: News[]): Signal[] {
-  // 使用 Map 自动去重：key = asset name，同一资产只保留最后一个匹配
-  const signalMap = new Map<string, Signal>();
-
-  for (const news of newsList) {
-    const text = news.title.toLowerCase();
-
-    for (const rule of SIGNAL_RULES) {
-      if (text.includes(rule.keyword)) {
-        const { asset, direction, reasonTemplate } = rule.signal;
-        // 覆盖同资产的旧信号，保证始终只有一个
-        signalMap.set(asset, {
-          asset,
-          direction,
-          reason: reasonTemplate,
-        });
-      }
-    }
-  }
-
-  // 转换为数组返回
-  return Array.from(signalMap.values());
-}
-
 export default function Home() {
-  const [news, setNews] = useState<News[]>([]);
-  const [signals, setSignals] = useState<Signal[]>([]);
+  const [news, setNews] = useState<NewsItem[]>([]);
+  const [signals, setSignals] = useState<SignalItem[]>([]);
 
   useEffect(() => {
+    let cancelled = false;
+
     async function load() {
-      const newsRes = await fetch("https://smart-trading-api.vercel.app/news");
-      const newsData = await newsRes.json();
+      const [newsRes, signalsRes] = await Promise.all([
+        fetch("https://smart-trading-api.vercel.app/news"),
+        fetch("https://smart-trading-api.vercel.app/signals"),
+      ]);
 
-      // 根据新闻本地生成信号，自动去重（同一资产只保留一个）
-      const generatedSignals = generateSignals(newsData);
+      const [newsData, signalData] = await Promise.all([
+        newsRes.json(),
+        signalsRes.json(),
+      ]);
 
-      setNews(newsData);
-      setSignals(generatedSignals);
+      if (cancelled) {
+        return;
+      }
+
+      setNews(Array.isArray(newsData) ? newsData : []);
+      setSignals(Array.isArray(signalData) ? signalData : []);
     }
 
     load();
 
     const interval = setInterval(load, 5000);
-    return () => clearInterval(interval);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, []);
 
   return (
@@ -211,40 +154,63 @@ export default function Home() {
 
           <div style={{ overflowY: "auto", flex: 1, minHeight: 0 }}>
             {news.map((n, i) => (
-              <div
-                key={i}
+              <a
+                key={n.id}
+                href={n.url}
+                target="_blank"
+                rel="noopener noreferrer"
                 style={{
+                  display: "block",
                   marginBottom: 12,
-                  paddingBottom: 12,
+                  padding: "12px 12px 12px 0",
                   borderBottom: i === news.length - 1 ? "none" : "1px dashed #cccccc",
-                  lineHeight: 1.3,
+                  lineHeight: 1.35,
+                  textDecoration: "none",
+                  color: "inherit",
+                  borderRadius: 4,
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.backgroundColor = "#f3f3e8";
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.backgroundColor = "transparent";
                 }}
               >
-                <div style={{ fontSize: 14 }}>
-                  {n.url ? (
-                    <a
-                      href={n.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
-                        color: "#000000",
-                        textDecoration: "none",
-                      }}
-                      onMouseOver={(e) => (e.currentTarget.style.textDecoration = "underline")}
-                      onMouseOut={(e) => (e.currentTarget.style.textDecoration = "none")}
-                    >
-                      {n.title}
-                    </a>
-                  ) : (
-                    <span style={{ color: "#000000" }}>{n.title}</span>
-                  )}
+                <div style={{ display: "flex", gap: 10, alignItems: "baseline", flexWrap: "wrap" }}>
+                  <span style={{ fontSize: 12, color: "#666666", minWidth: 18 }}>
+                    {n.rank}.
+                  </span>
+                  <div style={{ fontSize: 14, flex: 1, minWidth: 0, color: "#000000" }}>
+                    <span style={{ wordBreak: "break-word" }}>{n.title}</span>
+                  </div>
                 </div>
-                <div style={{ fontSize: 11, color: "#666666", marginTop: 4 }}>
-                  {n.source}
-                  {n.url && " · "}
-                  {n.time}
+                <div style={{ fontSize: 11, color: "#666666", marginTop: 6 }}>
+                  {n.domain} · {n.source} · {n.age}
                 </div>
-              </div>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 10,
+                    flexWrap: "wrap",
+                    marginTop: 6,
+                    fontSize: 11,
+                    color: "#666666",
+                  }}
+                >
+                  <span>{n.points} points</span>
+                  <span>{n.comments} comments</span>
+                </div>
+                <div
+                  style={{
+                    marginTop: 8,
+                    fontSize: 12,
+                    lineHeight: 1.45,
+                    color: "#444444",
+                  }}
+                >
+                  {n.summary}
+                </div>
+              </a>
             ))}
           </div>
         </section>
@@ -272,7 +238,6 @@ export default function Home() {
 
           <div style={{ overflowY: "auto", flex: 1, minHeight: 0 }}>
             {signals.map((s, i) => {
-              // 专业交易系统配色
               const colors = {
                 bullish: {
                   bg: "#f0fdf4",
@@ -294,14 +259,21 @@ export default function Home() {
 
               return (
                 <div
-                  key={i}
+                  key={s.asset}
                   style={{
                     marginBottom: 12,
-                    paddingBottom: 12,
+                    padding: "12px 0",
                     borderBottom: i === signals.length - 1 ? "none" : "1px dashed #cccccc",
                   }}
                 >
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      gap: 12,
+                    }}
+                  >
                     <span style={{ fontWeight: 600, color: "#000000", fontSize: 14 }}>{s.asset}</span>
                     <span
                       style={{
