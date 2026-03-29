@@ -60,15 +60,19 @@ export default function Home() {
   return (
     <div
       style={{
-        minHeight: "100vh",
+        height: "100dvh",
         display: "flex",
         flexDirection: "column",
         fontFamily: "Inter, -apple-system, BlinkMacSystemFont, sans-serif",
         backgroundColor: "#f6f6ef",
+        overflow: "hidden",
       }}
     >
       <header
         style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 10,
           padding: "20px 20px 14px",
           borderBottom: "1px solid #dcdcdc",
           backgroundColor: "#f6f6ef",
@@ -126,6 +130,7 @@ export default function Home() {
           flex: 1,
           display: "flex",
           minHeight: 0,
+          overflow: "hidden",
           fontFamily: "Inter, -apple-system, BlinkMacSystemFont, sans-serif",
           backgroundColor: "#f6f6ef",
         }}
