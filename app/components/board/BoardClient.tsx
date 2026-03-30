@@ -5,6 +5,7 @@ import { config } from "@/lib/config";
 import HeroSection from "./HeroSection";
 import InsightsSidebar from "./InsightsSidebar";
 import NewsSection from "./NewsSection";
+import BoardFooter from "./BoardFooter";
 import ReadingRail from "./ReadingRail";
 import SignalsSection from "./SignalsSection";
 import {
@@ -248,6 +249,10 @@ export default function BoardClient() {
       hasNews: count > 0,
     };
   });
+  const footerSources = sourceStats
+    .filter((source) => source.hasNews)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 6);
   const groupedSources = {
     china: sourceStats.filter((source) => isChineseSource(source.label) || isChineseSource(source.url)),
     global: sourceStats.filter((source) => !(isChineseSource(source.label) || isChineseSource(source.url))),
@@ -1105,6 +1110,22 @@ export default function BoardClient() {
               formatRelativeAge={formatRelativeAge}
             />
           </main>
+
+          <BoardFooter
+            isZh={isZh}
+            boardNavItems={boardNavItems}
+            onScrollToSection={scrollToBoardSection}
+            onToggleLanguage={() => setLang((current) => (current === "en" ? "zh" : "en"))}
+            topSources={footerSources.map((source) => ({
+              url: source.url,
+              label: formatSourceLabel(source.label),
+              count: source.count,
+            }))}
+            snapshotTime={formatSnapshotTime(boardData?.generatedAt)}
+            displayNewsCount={numberFormatter.format(displayNews.length)}
+            signalsCount={numberFormatter.format(signals.length)}
+            visibleSourceCount={visibleSourceCount}
+          />
         </div>
       </div>
     </div>
