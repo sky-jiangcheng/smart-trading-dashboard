@@ -1,4 +1,4 @@
-import type { DimensionCard } from "./model";
+import type { DimensionCard, NewsItem } from "./model";
 import { dimensionToneStyle } from "./shared";
 
 export default function InsightsSidebar({
@@ -7,12 +7,18 @@ export default function InsightsSidebar({
   activeDimension,
   onToggleDimension,
   reportBriefs,
+  latestNews,
+  formatSourceLabel,
+  formatRelativeAge,
 }: {
   isZh: boolean;
   dimensionCards: DimensionCard[];
   activeDimension: string | null;
   onToggleDimension: (key: string) => void;
   reportBriefs: Array<{ label: string; value: string; meta: string }>;
+  latestNews: NewsItem[];
+  formatSourceLabel: (source: string) => string;
+  formatRelativeAge: (item: { publishedAt: string | null; age: string }) => string;
 }) {
   const activeCard = dimensionCards.find((card) => card.key === activeDimension) || dimensionCards[0] || null;
   const leadingCards = dimensionCards.slice(0, 4);
@@ -27,29 +33,26 @@ export default function InsightsSidebar({
       <section className="board-section board-panel board-panel-side board-right-rail-section">
         <div className="board-section-head">
           <div>
-            <div className="board-panel-label">{isZh ? "Most Active" : "Most Active"}</div>
-            <h2>{isZh ? "市场热点" : "What's leading the tape"}</h2>
+            <div className="board-panel-label">{isZh ? "Latest Market News" : "Latest Market News"}</div>
+            <h2>{isZh ? "最新市场新闻" : "The latest market headlines"}</h2>
           </div>
         </div>
 
-        <div className="board-right-rail-list board-right-rail-list-trending">
-          {trendingCards.map((card, index) => (
-            <button
-              key={`trending-${card.key}`}
-              type="button"
-              className={`board-dimension-card board-dimension-card-editorial ${activeDimension === card.key ? "board-dimension-card-active" : ""}`}
-              onClick={() => onToggleDimension(card.key)}
-              style={dimensionToneStyle(card.tone)}
+        <div className="board-right-rail-list board-right-rail-list-news">
+          {latestNews.map((item, index) => (
+            <a
+              key={`latest-news-${item.id}`}
+              href={item.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`board-right-rail-story ${index === 0 ? "board-right-rail-story-lead" : ""}`}
             >
-              <div className="board-dimension-head">
-                <span>{index + 1}. {card.label}</span>
-                <span className={`board-dimension-state board-dimension-state-${card.state}`}>{card.state}</span>
+              <div className="board-right-rail-story-title">{item.title}</div>
+              <div className="board-right-rail-story-meta">
+                <span>{formatRelativeAge(item)}</span>
+                <span>{formatSourceLabel(item.source)}</span>
               </div>
-              <div className="board-dimension-metrics">
-                <span>{card.newsCount} {isZh ? "新闻" : "news"}</span>
-                <span>{card.signalCount} {isZh ? "信号" : "signals"}</span>
-              </div>
-            </button>
+            </a>
           ))}
         </div>
       </section>
@@ -57,55 +60,30 @@ export default function InsightsSidebar({
       <section className="board-section board-panel board-panel-side board-right-rail-section">
         <div className="board-section-head">
           <div>
-            <div className="board-panel-label">{isZh ? "Coverage Lens" : "Coverage Lens"}</div>
-            <h2>{isZh ? "主题镜头" : "Coverage lenses"}</h2>
+            <div className="board-panel-label">{isZh ? "Most Active" : "Most Active"}</div>
+            <h2>{isZh ? "主题热点" : "What's leading the tape"}</h2>
           </div>
         </div>
 
-        {activeCard ? (
-          <div className="board-dimension-focus board-dimension-focus-feature" style={dimensionToneStyle(activeCard.tone)}>
-            <div className="board-panel-label">{isZh ? "焦点镜头" : "Featured Lens"}</div>
-            <div className="board-dimension-focus-title">{activeCard.label}</div>
-            <p className="board-dimension-focus-copy">{activeCard.description}</p>
-            <div className="board-dimension-focus-grid">
-              <div>
-                <span>{activeCard.newsCount}</span>
-                <small>{isZh ? "新闻" : "news"}</small>
-              </div>
-              <div>
-                <span>{activeCard.signalCount}</span>
-                <small>{isZh ? "信号" : "signals"}</small>
-              </div>
-              <div>
-                <span>{activeCard.thresholdCount}</span>
-                <small>thresholds</small>
-              </div>
-            </div>
-          </div>
-        ) : null}
-
-        <div className="board-right-rail-list">
-          <div className="board-panel-label">{isZh ? "镜头列表" : "Lens Watchlist"}</div>
-          {leadingCards.map((card) => {
+        <div className="board-right-rail-list board-right-rail-list-trending">
+          {trendingCards.map((card, index) => {
             const active = activeDimension === card.key;
 
             return (
               <button
-                key={card.key}
+                key={`trending-${card.key}`}
                 type="button"
                 className={`board-dimension-card board-dimension-card-editorial ${active ? "board-dimension-card-active" : ""}`}
                 onClick={() => onToggleDimension(card.key)}
                 style={dimensionToneStyle(card.tone)}
               >
                 <div className="board-dimension-head">
-                  <span>{card.label}</span>
+                  <span>{index + 1}. {card.label}</span>
                   <span className={`board-dimension-state board-dimension-state-${card.state}`}>{card.state}</span>
                 </div>
-                <p>{card.description}</p>
                 <div className="board-dimension-metrics">
                   <span>{card.newsCount} {isZh ? "新闻" : "news"}</span>
                   <span>{card.signalCount} {isZh ? "信号" : "signals"}</span>
-                  <span>{card.thresholdCount} {isZh ? "阈值" : "thresholds"}</span>
                 </div>
               </button>
             );
@@ -157,6 +135,65 @@ export default function InsightsSidebar({
           </div>
         </div>
       </section>
+
+      {activeCard ? (
+        <section className="board-section board-panel board-panel-side board-right-rail-section">
+          <div className="board-section-head">
+            <div>
+              <div className="board-panel-label">{isZh ? "Coverage Lens" : "Coverage Lens"}</div>
+              <h2>{isZh ? "主题镜头" : "Coverage lens"}</h2>
+            </div>
+          </div>
+
+          <div className="board-dimension-focus board-dimension-focus-feature" style={dimensionToneStyle(activeCard.tone)}>
+            <div className="board-panel-label">{isZh ? "焦点镜头" : "Featured Lens"}</div>
+            <div className="board-dimension-focus-title">{activeCard.label}</div>
+            <p className="board-dimension-focus-copy">{activeCard.description}</p>
+            <div className="board-dimension-focus-grid">
+              <div>
+                <span>{activeCard.newsCount}</span>
+                <small>{isZh ? "新闻" : "news"}</small>
+              </div>
+              <div>
+                <span>{activeCard.signalCount}</span>
+                <small>{isZh ? "信号" : "signals"}</small>
+              </div>
+              <div>
+                <span>{activeCard.thresholdCount}</span>
+                <small>thresholds</small>
+              </div>
+            </div>
+          </div>
+
+          <div className="board-right-rail-list">
+            <div className="board-panel-label">{isZh ? "镜头列表" : "Lens Watchlist"}</div>
+            {leadingCards.map((card) => {
+              const active = activeDimension === card.key;
+
+              return (
+                <button
+                  key={card.key}
+                  type="button"
+                  className={`board-dimension-card board-dimension-card-editorial ${active ? "board-dimension-card-active" : ""}`}
+                  onClick={() => onToggleDimension(card.key)}
+                  style={dimensionToneStyle(card.tone)}
+                >
+                  <div className="board-dimension-head">
+                    <span>{card.label}</span>
+                    <span className={`board-dimension-state board-dimension-state-${card.state}`}>{card.state}</span>
+                  </div>
+                  <p>{card.description}</p>
+                  <div className="board-dimension-metrics">
+                    <span>{card.newsCount} {isZh ? "新闻" : "news"}</span>
+                    <span>{card.signalCount} {isZh ? "信号" : "signals"}</span>
+                    <span>{card.thresholdCount} {isZh ? "阈值" : "thresholds"}</span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
     </aside>
   );
 }

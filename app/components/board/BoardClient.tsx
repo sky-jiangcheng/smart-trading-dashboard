@@ -753,6 +753,9 @@ export default function BoardClient() {
     .filter((item) => item.id !== topNews?.id)
     .slice(0, 4);
   const excludedLeadNewsIds = [topNews?.id, ...leadFollowUps.map((item) => item.id)].filter(Boolean) as string[];
+  const sidebarLatestNews = filteredBoardNews
+    .filter((item) => !excludedLeadNewsIds.includes(item.id))
+    .slice(0, 4);
 
   function countNewsByKeywords(keywords: string[]) {
     if (keywords.length === 0) {
@@ -1097,6 +1100,9 @@ export default function BoardClient() {
               activeDimension={activeDimension}
               onToggleDimension={(key) => setActiveDimension((current) => (current === key ? null : key))}
               reportBriefs={reportBriefs}
+              latestNews={sidebarLatestNews}
+              formatSourceLabel={formatSourceLabel}
+              formatRelativeAge={formatRelativeAge}
             />
           </main>
         </div>
