@@ -76,6 +76,9 @@ export default function HeroSection({
     : [];
   const marketBars = reportBriefs.slice(0, 3);
   const leadDeck = topNews ? trimCopy(topNews.summary, isZh ? 70 : 126) : "";
+  const featuredSecondary = secondaryNews[0];
+  const remainingSecondary = secondaryNews.slice(1, 4);
+  const quickLinkStories = [topNews, ...secondaryNews].filter(Boolean).slice(0, 6);
 
   return (
     <header id={id} className="board-section board-hero-panel">
@@ -97,6 +100,29 @@ export default function HeroSection({
             <div className="board-market-bar-meta">{item.meta}</div>
           </div>
         ))}
+      </div>
+
+      <div className="board-hero-quicklinks">
+        <span className="board-hero-quicklinks-label">{isZh ? "Quick Links" : "Quick Links"}</span>
+        <div className="board-hero-quicklinks-list">
+          {quickLinkStories.map((item) => {
+            if (!item?.title) {
+              return null;
+            }
+
+            return (
+              <a
+                key={`${item.title}-${item.publishedAt || item.age}`}
+                href={item.url || "#"}
+                target={item.url ? "_blank" : undefined}
+                rel={item.url ? "noopener noreferrer" : undefined}
+                className="board-hero-quicklink"
+              >
+                {trimCopy(item.title, isZh ? 16 : 28)}
+              </a>
+            );
+          })}
+        </div>
       </div>
 
       <div className="board-lead-cluster">
@@ -135,14 +161,30 @@ export default function HeroSection({
           ) : null}
         </article>
 
+        {featuredSecondary ? (
+          <article className="board-hero-feature">
+            <a href={featuredSecondary.url} target="_blank" rel="noopener noreferrer" className="board-hero-feature-media" aria-label={featuredSecondary.title}>
+              <div className="board-hero-feature-image" />
+            </a>
+            <a href={featuredSecondary.url} target="_blank" rel="noopener noreferrer" className="board-hero-feature-body">
+              <div className="board-news-meta">
+                <span>{formatSourceLabel(featuredSecondary.source)}</span>
+                <span>{formatRelativeAge(featuredSecondary)}</span>
+              </div>
+              <div className="board-hero-feature-title">{featuredSecondary.title}</div>
+              <p className="board-hero-feature-copy">{trimCopy(featuredSecondary.summary, isZh ? 56 : 112)}</p>
+            </a>
+          </article>
+        ) : null}
+
         <aside className="board-lead-sidebar">
           <div className="board-lead-sidebar-block">
             <div className="board-story-card-top">
-              <span className="board-panel-label">{isZh ? "跟进头条" : "Toplines"}</span>
-              <span className="board-news-rail-meta">{secondaryNews.length}</span>
+              <span className="board-panel-label">{isZh ? "最新头条" : "Latest News"}</span>
+              <span className="board-news-rail-meta">{remainingSecondary.length}</span>
             </div>
             <div className="board-lead-headline-list">
-              {secondaryNews.map((item) => (
+              {remainingSecondary.map((item) => (
                 <a key={item.id} href={item.url} target="_blank" rel="noopener noreferrer" className="board-lead-headline-item">
                   <div className="board-news-meta">
                     <span>{formatSourceLabel(item.source)}</span>

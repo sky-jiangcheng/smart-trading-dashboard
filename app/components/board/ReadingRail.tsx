@@ -32,11 +32,15 @@ export default function ReadingRail({
   onScrollToSection: (sectionId: BoardSectionId) => void;
   onToggleLanguage: () => void;
 }) {
+  const primaryLinks = isZh
+    ? ["市场", "商业", "投资", "科技", "视频", "直播"]
+    : ["Markets", "Business", "Investing", "Tech", "Video", "Livestream"];
+
   return (
     <header className="board-topbar board-rail">
       <div className="board-masthead-strip" aria-label={isZh ? "市场横幅" : "Markets banner"}>
         <div className="board-masthead-strip-tabs">
-          {["US", "EUR", "ASIA", "BONDS", "OIL", "FX", "CRYPTO"].map((item, index) => (
+          {["PRE-MKT", "EUR", "ASIA", "US", "BONDS", "OIL", "GOLD", "FX", "CRYPTO"].map((item, index) => (
             <span
               key={item}
               className={`board-masthead-tab ${index === 0 ? "board-masthead-tab-active" : ""}`}
@@ -53,23 +57,42 @@ export default function ReadingRail({
 
       <div className="board-topbar-row board-topbar-row-reset">
         <div className="board-brand-lockup">
-          <div className="board-brand-copy">
-            <div className="board-chip-row board-chip-row-tight">
-              <span className="board-kicker">{isZh ? "LIVE" : "LIVE"}</span>
-              <span className={`board-status-pill board-status-pill-${marketStateMeta.tone}`}>
-                <span className={`board-status-dot ${isRefreshing ? "board-status-dot-live" : ""}`} />
-                {isRefreshing ? ui.refreshing : ui.upToDate}
+          <div className="board-brand-mark">
+            <span className="board-brand-menu">{isZh ? "≡" : "≡"}</span>
+            <h1>{isZh ? "SMART TRADING SPACE" : "SMART TRADING SPACE"}</h1>
+          </div>
+          <div className="board-primary-masthead-nav" aria-label={isZh ? "频道导航" : "Channel navigation"}>
+            {primaryLinks.map((item, index) => (
+              <span key={item} className={index === 0 ? "board-primary-masthead-link board-primary-masthead-link-active" : "board-primary-masthead-link"}>
+                {item}
               </span>
-              <span className="board-status-pill board-status-pill-muted">
-                {isZh ? "快照" : "Snapshot"} {snapshotTime}
-              </span>
-            </div>
-            <h2>{isZh ? "SMART TRADING SPACE" : "SMART TRADING SPACE"}</h2>
-            <p>{isZh ? "Markets · Business · Investing" : "Markets · Business · Investing"}</p>
+            ))}
           </div>
         </div>
 
-        <div className="board-topbar-actions">
+        <button type="button" className="board-topbar-search" aria-label={isZh ? "搜索行情、新闻与视频" : "Search quotes, news and videos"}>
+          <span>{isZh ? "搜索行情、新闻与视频" : "Search quotes, news & videos"}</span>
+          <span className="board-topbar-search-icon">{isZh ? "⌕" : "⌕"}</span>
+        </button>
+
+        <div className="board-topbar-actions board-topbar-actions-rich">
+          <div className="board-chip-row board-chip-row-tight">
+            <span className="board-kicker">{isZh ? "LIVE" : "LIVE"}</span>
+            <span className={`board-status-pill board-status-pill-${marketStateMeta.tone}`}>
+              <span className={`board-status-dot ${isRefreshing ? "board-status-dot-live" : ""}`} />
+              {isRefreshing ? ui.refreshing : ui.upToDate}
+            </span>
+            <span className="board-status-pill board-status-pill-muted">
+              {isZh ? "快照" : "Snapshot"} {snapshotTime}
+            </span>
+          </div>
+
+          <div className="board-topbar-utility-links">
+            <span>{isZh ? "观察列表" : "Watchlist"}</span>
+            <span>{isZh ? "实时流" : "Livestream"}</span>
+            <span>{isZh ? "全球版" : "USA • INTL"}</span>
+          </div>
+
           <div className="board-topbar-summary board-topbar-summary-reset" aria-label={isZh ? "市场摘要" : "Market summary"}>
             <span className="board-topbar-summary-item">
               <strong>{displayNewsCount}</strong>
