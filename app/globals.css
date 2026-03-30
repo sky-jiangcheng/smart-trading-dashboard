@@ -3777,3 +3777,122 @@ body {
     flex-direction: column;
   }
 }
+
+/* CNBC side-rail pass */
+
+.board-stage {
+  gap: 14px;
+}
+
+.board-hero-panel {
+  margin-bottom: 2px;
+}
+
+.board-main-grid {
+  grid-template-columns: minmax(0, 1.34fr) minmax(300px, 0.38fr);
+  gap: 18px;
+}
+
+.board-right-rail {
+  gap: 10px;
+}
+
+.board-right-rail-section {
+  padding: 12px 14px;
+  border-color: #d3dbe8;
+  background:
+    linear-gradient(180deg, #fbfdff, #f5f8fc);
+  box-shadow: none;
+}
+
+.board-right-rail .board-section-head {
+  padding-bottom: 8px;
+  margin-bottom: 2px;
+}
+
+.board-right-rail .board-section-head h2 {
+  font-size: 0.98rem;
+  line-height: 1.2;
+}
+
+.board-right-rail .board-panel-label {
+  font-size: 9px;
+  letter-spacing: 0.18em;
+}
+
+.board-right-rail-list {
+  gap: 0;
+}
+
+.board-right-rail-list > * {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.board-right-rail-list-trending .board-dimension-card-editorial .board-dimension-head {
+  align-items: center;
+}
+
+.board-right-rail .board-dimension-card-editorial {
+  gap: 6px;
+}
+
+.board-right-rail .board-dimension-card-editorial .board-dimension-head span:first-child {
+  font-size: 0.94rem;
+  line-height: 1.2;
+}
+
+.board-right-rail .board-dimension-card-editorial p {
+  margin: 0;
+  color: #5b6f90;
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.board-right-rail .board-dimension-metrics,
+.board-right-rail .board-news-meta,
+.board-right-rail .board-brief-copy {
+  color: #647895;
+}
+
+.board-right-rail .board-brief-value {
+  font-size: 0.92rem;
+  line-height: 1.15;
+}
+
+.board-right-rail .board-brief-card-editorial {
+  display: grid;
+  gap: 4px;
+}
+
+.board-standard-grid-editorial {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+}
+
+.board-standard-grid-editorial .board-standard-card-editorial + .board-standard-card-editorial {
+  margin-top: 8px;
+  padding-top: 10px;
+  border-top: 1px solid #e3e8f0;
+}
+
+.board-standard-card-editorial .board-brief-value {
+  font-size: 0.86rem;
+}
+
+.board-standard-card-editorial p {
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.board-panel-news,
+.board-panel-signals,
+.board-hero-panel {
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.03);
+}
+
+@media (max-width: 1199px) {
+  .board-main-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

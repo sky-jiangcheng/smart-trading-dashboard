@@ -27,7 +27,7 @@ export default function InsightsSidebar({
       <section className="board-section board-panel board-panel-side board-right-rail-section">
         <div className="board-section-head">
           <div>
-            <div className="board-panel-label">{isZh ? "Trending Now" : "Trending Now"}</div>
+            <div className="board-panel-label">{isZh ? "Most Active" : "Most Active"}</div>
             <h2>{isZh ? "市场热点" : "What's leading the tape"}</h2>
           </div>
         </div>
@@ -57,7 +57,7 @@ export default function InsightsSidebar({
       <section className="board-section board-panel board-panel-side board-right-rail-section">
         <div className="board-section-head">
           <div>
-            <div className="board-panel-label">{isZh ? "Markets / Lens" : "Markets / Lens"}</div>
+            <div className="board-panel-label">{isZh ? "Coverage Lens" : "Coverage Lens"}</div>
             <h2>{isZh ? "主题镜头" : "Coverage lenses"}</h2>
           </div>
         </div>
@@ -116,7 +116,7 @@ export default function InsightsSidebar({
       <section className="board-section board-panel board-panel-side board-right-rail-section">
         <div className="board-section-head">
           <div>
-            <div className="board-panel-label">{isZh ? "关键数字" : "Key Numbers"}</div>
+            <div className="board-panel-label">{isZh ? "Market Snapshot" : "Market Snapshot"}</div>
             <h2>{isZh ? "快速市场摘要" : "Quick market read"}</h2>
           </div>
         </div>
@@ -135,7 +135,7 @@ export default function InsightsSidebar({
       <section className="board-section board-panel board-panel-side board-right-rail-section">
         <div className="board-section-head">
           <div>
-            <div className="board-panel-label">{isZh ? "编辑说明" : "Editor's Note"}</div>
+            <div className="board-panel-label">{isZh ? "Editor's Note" : "Editor's Note"}</div>
             <h2>{isZh ? "阅读顺序" : "Reading order"}</h2>
           </div>
         </div>
