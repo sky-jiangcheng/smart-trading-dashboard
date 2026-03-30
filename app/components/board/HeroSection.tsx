@@ -102,7 +102,7 @@ export default function HeroSection({
       </div>
 
       <div className="board-hero-quicklinks">
-        <span className="board-hero-quicklinks-label">{isZh ? "Quick Links" : "Quick Links"}</span>
+        <span className="board-hero-quicklinks-label">{isZh ? "头条导航" : "Top Stories"}</span>
         <div className="board-hero-quicklinks-list">
           {quickLinkStories.map((item) => {
             if (!item?.title) {

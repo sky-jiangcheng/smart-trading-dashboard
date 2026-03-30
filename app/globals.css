@@ -4211,25 +4211,26 @@ body {
   background: rgba(255, 255, 255, 0.04);
 }
 
-.board-masthead-strip-tabs {
+.board-masthead-facts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 14px;
 }
 
-.board-masthead-tab {
-  min-height: auto;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  color: rgba(255, 255, 255, 0.72);
-  font-size: 11px;
+.board-masthead-fact {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: rgba(255, 255, 255, 0.76);
+  font-size: 10px;
   font-weight: 800;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
-.board-masthead-tab-active {
+.board-masthead-fact strong {
   color: #ffffff;
-  box-shadow: inset 0 -2px 0 #ffffff;
 }
 
 .board-topbar-row-reset {
@@ -4267,6 +4268,15 @@ body {
   line-height: 1.3;
   font-weight: 700;
   letter-spacing: 0.04em;
+}
+
+.board-masthead-strip-note {
+  white-space: nowrap;
+  color: rgba(255, 255, 255, 0.76);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
 .board-topbar-actions-rich {
@@ -4347,9 +4357,10 @@ body {
 }
 
 .board-hero-quicklinks-label {
-  color: #374151;
+  color: #123b87;
   font-size: 14px;
-  font-weight: 800;
+  font-weight: 900;
+  text-transform: uppercase;
 }
 
 .board-hero-quicklinks-list {
@@ -4402,6 +4413,11 @@ body {
 }
 
 @media (max-width: 1199px) {
+  .board-masthead-strip {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
   .board-topbar-row-reset {
     grid-template-columns: minmax(0, 1fr);
     justify-items: stretch;

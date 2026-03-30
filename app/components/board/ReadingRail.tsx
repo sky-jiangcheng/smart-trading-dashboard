@@ -35,19 +35,23 @@ export default function ReadingRail({
   return (
     <header className="board-topbar board-rail">
       <div className="board-masthead-strip" aria-label={isZh ? "市场横幅" : "Markets banner"}>
-        <div className="board-masthead-strip-tabs">
-          {["PRE-MKT", "EUR", "ASIA", "US", "BONDS", "OIL", "GOLD", "FX", "CRYPTO"].map((item, index) => (
-            <span
-              key={item}
-              className={`board-masthead-tab ${index === 0 ? "board-masthead-tab-active" : ""}`}
-            >
-              {item}
-            </span>
-          ))}
+        <div className="board-masthead-facts">
+          <span className="board-masthead-fact">
+            {isZh ? "市场状态" : "Market State"} <strong>{marketStateMeta.label}</strong>
+          </span>
+          <span className="board-masthead-fact">
+            {displayNewsCount} {ui.newsCountLabel}
+          </span>
+          <span className="board-masthead-fact">
+            {signalsCount} {ui.signalsCountLabel}
+          </span>
+          <span className="board-masthead-fact">
+            {visibleSourceCount} {ui.sourceCountLabel}
+          </span>
         </div>
         <div className="board-masthead-strip-note">
-          {isZh ? "Quick Links" : "Quick Links"}:
-          <span>{isZh ? " 头条 / 市场 / 趋势" : " Top stories / Markets / Trending"}</span>
+          {isZh ? "快照" : "Snapshot"}:
+          <span> {snapshotTime}</span>
         </div>
       </div>
 
