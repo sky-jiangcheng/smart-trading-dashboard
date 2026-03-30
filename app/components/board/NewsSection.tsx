@@ -70,7 +70,7 @@ export default function NewsSection({
     <section id={id} className="board-section board-panel board-panel-news">
       <div className="board-section-head">
         <div>
-          <div className="board-panel-label">{isZh ? "Headline River" : "Headline River"}</div>
+          <div className="board-panel-label">{isZh ? "新闻流" : "News Feed"}</div>
           <h2>{isZh ? "连续头条流" : "Rolling headlines and developing stories"}</h2>
         </div>
         <div className="board-section-meta">{displayNewsCount} {ui.newsCountLabel}</div>
@@ -162,7 +162,7 @@ export default function NewsSection({
         <aside className="board-news-sidebar board-news-sidebar-reset">
           <div className="board-news-rail board-news-rail-sidebar">
             <div className="board-news-rail-head">
-              <span className="board-panel-label">{isZh ? "继续阅读" : "Continuing Coverage"}</span>
+              <span className="board-panel-label">{isZh ? "继续追踪" : "Follow-ups"}</span>
               <span className="board-news-rail-meta">{isZh ? "更多头条" : "More headlines"}</span>
             </div>
             <div className="board-news-rail-list">

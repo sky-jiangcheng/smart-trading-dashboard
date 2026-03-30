@@ -42,7 +42,7 @@ export default function BoardFooter({
 
       <div className="board-footer-grid">
         <section className="board-footer-column">
-          <h3>{isZh ? "栏目导览" : "Sections"}</h3>
+          <h3>{isZh ? "栏目" : "Sections"}</h3>
           <div className="board-footer-link-list">
             {boardNavItems.map((item) => (
               <button
@@ -59,7 +59,7 @@ export default function BoardFooter({
         </section>
 
         <section className="board-footer-column">
-          <h3>{isZh ? "主要来源" : "Top Sources"}</h3>
+          <h3>{isZh ? "来源" : "Sources"}</h3>
           <div className="board-footer-link-list">
             {topSources.map((source) => (
               <a
@@ -95,7 +95,7 @@ export default function BoardFooter({
         </section>
 
         <section className="board-footer-column">
-          <h3>{isZh ? "当前快照" : "Current Snapshot"}</h3>
+          <h3>{isZh ? "快照" : "Snapshot"}</h3>
           <div className="board-footer-note">
             <p>{isZh ? "页面内容和页脚统计保持同步，不展示没有对应数据的壳子模块。" : "This footer mirrors the live page state and avoids placeholder modules without backing data."}</p>
             <p>{isZh ? `快照时间 ${snapshotTime}` : `Snapshot ${snapshotTime}`}</p>

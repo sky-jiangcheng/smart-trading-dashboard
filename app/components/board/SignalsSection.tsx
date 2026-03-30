@@ -52,7 +52,7 @@ export default function SignalsSection({
               <div className={`board-signal-command board-signal-command-${leadSignal.direction}`}>
                 <div className="board-signal-command-top">
                   <div>
-                    <div className="board-panel-label">{isZh ? "市场主线" : "Market Watch"}</div>
+                    <div className="board-panel-label">{isZh ? "主线" : "Lead Signal"}</div>
                     <div className="board-signal-command-asset">{leadSignal.asset}</div>
                   </div>
                   <span className="board-signal-command-direction">
@@ -90,7 +90,7 @@ export default function SignalsSection({
               </div>
             ) : (
               <div className="board-signal-empty-feature">
-                <div className="board-panel-label">{isZh ? "市场主线" : "Market Watch"}</div>
+                <div className="board-panel-label">{isZh ? "主线" : "Lead Signal"}</div>
                 <div className="board-signal-empty-title">{isZh ? "当前没有新的可执行信号" : "No fresh actionable signals yet"}</div>
                 <p className="board-signal-empty-copy">
                   {isZh

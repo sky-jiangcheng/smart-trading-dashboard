@@ -33,7 +33,7 @@ export default function InsightsSidebar({
       <section className="board-section board-panel board-panel-side board-right-rail-section">
         <div className="board-section-head">
           <div>
-            <div className="board-panel-label">{isZh ? "Latest Market News" : "Latest Market News"}</div>
+            <div className="board-panel-label">{isZh ? "新闻" : "News"}</div>
             <h2>{isZh ? "最新市场新闻" : "The latest market headlines"}</h2>
           </div>
         </div>
@@ -60,7 +60,7 @@ export default function InsightsSidebar({
       <section className="board-section board-panel board-panel-side board-right-rail-section">
         <div className="board-section-head">
           <div>
-            <div className="board-panel-label">{isZh ? "Most Active" : "Most Active"}</div>
+            <div className="board-panel-label">{isZh ? "热点" : "Active Themes"}</div>
             <h2>{isZh ? "主题热点" : "What's leading the tape"}</h2>
           </div>
         </div>
@@ -94,7 +94,7 @@ export default function InsightsSidebar({
       <section className="board-section board-panel board-panel-side board-right-rail-section">
         <div className="board-section-head">
           <div>
-            <div className="board-panel-label">{isZh ? "Market Snapshot" : "Market Snapshot"}</div>
+            <div className="board-panel-label">{isZh ? "快照" : "Snapshot"}</div>
             <h2>{isZh ? "快速市场摘要" : "Quick market read"}</h2>
           </div>
         </div>
@@ -113,7 +113,7 @@ export default function InsightsSidebar({
       <section className="board-section board-panel board-panel-side board-right-rail-section">
         <div className="board-section-head">
           <div>
-            <div className="board-panel-label">{isZh ? "Editor's Note" : "Editor's Note"}</div>
+            <div className="board-panel-label">{isZh ? "说明" : "Notes"}</div>
             <h2>{isZh ? "阅读顺序" : "Reading order"}</h2>
           </div>
         </div>
@@ -127,7 +127,7 @@ export default function InsightsSidebar({
             </p>
           </div>
           <div className="board-standard-card board-standard-card-editorial">
-            <div className="board-panel-label">{isZh ? "界面语言" : "Interface Language"}</div>
+            <div className="board-panel-label">{isZh ? "界面规范" : "Interface Standard"}</div>
             <div className="board-brief-value">{isZh ? "媒体优先" : "Editorial"}</div>
             <p className="board-brief-copy">
               {isZh ? "按财经首页组织内容，而不是按后台模块组织内容。" : "Organized like a financial homepage, not a control panel."}
@@ -138,12 +138,12 @@ export default function InsightsSidebar({
 
       {activeCard ? (
         <section className="board-section board-panel board-panel-side board-right-rail-section">
-          <div className="board-section-head">
-            <div>
-              <div className="board-panel-label">{isZh ? "Coverage Lens" : "Coverage Lens"}</div>
+            <div className="board-section-head">
+              <div>
+              <div className="board-panel-label">{isZh ? "镜头" : "Lens"}</div>
               <h2>{isZh ? "主题镜头" : "Coverage lens"}</h2>
+              </div>
             </div>
-          </div>
 
           <div className="board-dimension-focus board-dimension-focus-feature" style={dimensionToneStyle(activeCard.tone)}>
             <div className="board-panel-label">{isZh ? "焦点镜头" : "Featured Lens"}</div>

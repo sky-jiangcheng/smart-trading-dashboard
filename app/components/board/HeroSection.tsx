@@ -82,7 +82,7 @@ export default function HeroSection({
   return (
     <header id={id} className="board-section board-hero-panel">
       <div className="board-hero-meta-strip">
-        <span className="board-panel-label">{isZh ? "Lead Story" : "Lead Story"}</span>
+        <span className="board-panel-label">{isZh ? "头条" : "Lead"}</span>
         <div className="board-chip-row board-chip-row-tight">
           <span className={`board-status-pill board-status-pill-${marketStateMeta.tone}`}>{marketStateMeta.label}</span>
           <span className="board-status-pill board-status-pill-muted">
@@ -163,7 +163,7 @@ export default function HeroSection({
         <aside className="board-lead-sidebar">
           <div className="board-lead-sidebar-block">
             <div className="board-story-card-top">
-              <span className="board-panel-label">{isZh ? "最新头条" : "Latest News"}</span>
+              <span className="board-panel-label">{isZh ? "头条追踪" : "Follow-ups"}</span>
               <span className="board-news-rail-meta">{remainingSecondary.length}</span>
             </div>
             <div className="board-lead-headline-list">
@@ -183,7 +183,7 @@ export default function HeroSection({
           {topSignal ? (
             <article className={`board-hero-rail-card board-hero-rail-card-signal board-hero-rail-card-signal-${topSignal.direction}`}>
               <div className="board-story-card-top">
-                <span className="board-panel-label">{isZh ? "市场快照" : "Market Snapshot"}</span>
+                <span className="board-panel-label">{isZh ? "市场快照" : "Snapshot"}</span>
                 <span className="board-hero-signal-state">
                   {isZh
                     ? topSignal.direction === "bullish"
@@ -204,7 +204,7 @@ export default function HeroSection({
           {activeDimensionCard ? (
             <article className="board-hero-rail-card board-hero-rail-card-note">
               <div className="board-story-card-top">
-                <span className="board-panel-label">{isZh ? "当前镜头" : "Active Lens"}</span>
+                <span className="board-panel-label">{isZh ? "当前镜头" : "Lens"}</span>
                 <button type="button" className="board-inline-clear" onClick={onClearDimension}>
                   {isZh ? "清除" : "Clear"}
                 </button>
