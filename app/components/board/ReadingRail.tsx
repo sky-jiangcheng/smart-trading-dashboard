@@ -106,7 +106,7 @@ export default function ReadingRail({
 
       <div className="board-topnav-wrap board-topnav-wrap-reset">
         <nav className="board-topnav" aria-label={isZh ? "Board 导航" : "Board navigation"}>
-          {boardNavItems.map((item) => {
+          {boardNavItems.map((item, index) => {
             const active = activeBoardSection === item.id;
 
             return (
@@ -117,8 +117,12 @@ export default function ReadingRail({
                 onClick={() => onScrollToSection(item.id)}
                 aria-current={active ? "page" : undefined}
               >
+                <span className="board-topnav-row">
+                  <span className="board-topnav-index">{String(index + 1).padStart(2, "0")}</span>
+                  <span className="board-topnav-meta">{item.meta}</span>
+                </span>
                 <span className="board-topnav-label">{item.label}</span>
-                <span className="board-topnav-meta">{item.meta}</span>
+                <span className="board-topnav-hint">{item.hint}</span>
               </button>
             );
           })}
