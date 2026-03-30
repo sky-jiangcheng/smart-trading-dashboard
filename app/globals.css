@@ -4234,7 +4234,7 @@ body {
 
 .board-topbar-row-reset {
   display: grid;
-  grid-template-columns: minmax(280px, auto) minmax(240px, 1fr) auto;
+  grid-template-columns: minmax(280px, 1fr) auto;
   gap: 18px;
   align-items: center;
   padding: 10px 18px 14px;
@@ -4242,20 +4242,13 @@ body {
 
 .board-brand-lockup {
   display: grid;
-  gap: 10px;
+  gap: 6px;
 }
 
 .board-brand-mark {
   display: flex;
   align-items: center;
-  gap: 14px;
-}
-
-.board-brand-menu {
-  color: #ffffff;
-  font-size: 25px;
-  line-height: 1;
-  transform: translateY(-1px);
+  gap: 0;
 }
 
 .board-brand-mark h1 {
@@ -4267,59 +4260,19 @@ body {
   letter-spacing: -0.05em;
 }
 
-.board-primary-masthead-nav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 18px;
-}
-
-.board-primary-masthead-link {
-  color: rgba(255, 255, 255, 0.78);
+.board-brand-tagline {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.72);
   font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-}
-
-.board-primary-masthead-link-active {
-  color: #ffffff;
-}
-
-.board-topbar-search {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 46px;
-  padding: 0 16px;
-  border: 0;
-  background: rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.86);
-  font-size: 14px;
+  line-height: 1.3;
   font-weight: 700;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
-}
-
-.board-topbar-search-icon {
-  font-size: 22px;
-  line-height: 1;
+  letter-spacing: 0.04em;
 }
 
 .board-topbar-actions-rich {
   display: grid;
   justify-items: end;
   gap: 10px;
-}
-
-.board-topbar-utility-links {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 16px;
-  color: rgba(255, 255, 255, 0.82);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
 .board-topbar-summary-reset {
@@ -4417,95 +4370,22 @@ body {
 }
 
 .board-lead-cluster {
-  grid-template-columns: minmax(0, 1.48fr) minmax(280px, 0.72fr) minmax(300px, 0.7fr);
-  gap: 26px;
+  grid-template-columns: minmax(0, 1.58fr) minmax(320px, 0.82fr);
+  gap: 22px;
 }
 
 .board-hero-lead {
   padding-right: 0;
-  border-right: 0;
+  border-right: 1px solid #dde5f1;
 }
 
 .board-hero-lead-title {
-  font-size: clamp(3.3rem, 5.4vw, 5rem);
+  font-size: clamp(2.7rem, 4.8vw, 4.2rem);
   line-height: 0.92;
-}
-
-.board-hero-feature {
-  display: grid;
-  gap: 12px;
-  align-content: start;
-}
-
-.board-hero-feature-media,
-.board-hero-feature-body {
-  text-decoration: none;
-  color: inherit;
-}
-
-.board-hero-feature-image {
-  min-height: 270px;
-  border: 1px solid #d7e0ec;
-  background:
-    linear-gradient(180deg, transparent 58%, rgba(10, 22, 49, 0.38) 100%),
-    linear-gradient(135deg, rgba(12, 45, 107, 0.08), rgba(12, 45, 107, 0.01)),
-    radial-gradient(circle at 20% 20%, rgba(12, 45, 107, 0.15), transparent 36%),
-    radial-gradient(circle at 80% 70%, rgba(14, 116, 144, 0.12), transparent 28%),
-    #e9eef6;
-}
-
-.board-hero-feature-title {
-  color: #1f2937;
-  font-size: 1.05rem;
-  line-height: 1.2;
-  font-weight: 900;
-  letter-spacing: -0.02em;
-}
-
-.board-hero-feature-copy {
-  margin: 0;
-  color: #667085;
-  font-size: 0.9rem;
-  line-height: 1.55;
 }
 
 .board-lead-sidebar {
   gap: 16px;
-}
-
-.board-hero-live-card {
-  display: grid;
-  gap: 12px;
-  padding: 12px;
-  border: 2px solid #0b57d0;
-  background: #ffffff;
-}
-
-.board-hero-live-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 52px;
-  background: #0b57d0;
-  color: #ffffff;
-  text-decoration: none;
-  font-size: 14px;
-  font-weight: 900;
-  text-transform: uppercase;
-}
-
-.board-hero-live-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-}
-
-.board-hero-live-show {
-  color: #123b87;
-  font-size: 0.98rem;
-  line-height: 1.2;
-  font-weight: 900;
-  letter-spacing: -0.02em;
 }
 
 .board-lead-sidebar-block {
@@ -4527,10 +4407,8 @@ body {
     justify-items: stretch;
   }
 
-  .board-topbar-actions-rich,
-  .board-topbar-utility-links {
+  .board-topbar-actions-rich {
     justify-items: start;
-    justify-content: flex-start;
   }
 
   .board-lead-cluster {

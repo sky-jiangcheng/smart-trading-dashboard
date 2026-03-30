@@ -76,8 +76,7 @@ export default function HeroSection({
     : [];
   const marketBars = reportBriefs.slice(0, 3);
   const leadDeck = topNews ? trimCopy(topNews.summary, isZh ? 70 : 126) : "";
-  const featuredSecondary = secondaryNews[0];
-  const remainingSecondary = secondaryNews.slice(1, 4);
+  const remainingSecondary = secondaryNews.slice(0, 4);
   const quickLinkStories = [topNews, ...secondaryNews].filter(Boolean).slice(0, 6);
 
   return (
@@ -161,39 +160,7 @@ export default function HeroSection({
           ) : null}
         </article>
 
-        {featuredSecondary ? (
-          <article className="board-hero-feature">
-            <a href={featuredSecondary.url} target="_blank" rel="noopener noreferrer" className="board-hero-feature-media" aria-label={featuredSecondary.title}>
-              <div className="board-hero-feature-image" />
-            </a>
-            <a href={featuredSecondary.url} target="_blank" rel="noopener noreferrer" className="board-hero-feature-body">
-              <div className="board-news-meta">
-                <span>{formatSourceLabel(featuredSecondary.source)}</span>
-                <span>{formatRelativeAge(featuredSecondary)}</span>
-              </div>
-              <div className="board-hero-feature-title">{featuredSecondary.title}</div>
-              <p className="board-hero-feature-copy">{trimCopy(featuredSecondary.summary, isZh ? 56 : 112)}</p>
-            </a>
-          </article>
-        ) : null}
-
         <aside className="board-lead-sidebar">
-          <article className="board-hero-live-card">
-            <a href={topNews?.url || "#"} target={topNews?.url ? "_blank" : undefined} rel={topNews?.url ? "noopener noreferrer" : undefined} className="board-hero-live-button">
-              {isZh ? "观看实时更新" : "Watch Livestream"}
-            </a>
-            <div className="board-hero-live-grid">
-              <div>
-                <div className="board-panel-label">{isZh ? "现在" : "Now"}</div>
-                <div className="board-hero-live-show">{isZh ? "市场速览" : "Market Pulse"}</div>
-              </div>
-              <div>
-                <div className="board-panel-label">{isZh ? "接下来" : "Up Next"}</div>
-                <div className="board-hero-live-show">{isZh ? "资金流向" : "Money Movers"}</div>
-              </div>
-            </div>
-          </article>
-
           <div className="board-lead-sidebar-block">
             <div className="board-story-card-top">
               <span className="board-panel-label">{isZh ? "最新头条" : "Latest News"}</span>
