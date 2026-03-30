@@ -4296,6 +4296,7 @@ body {
   color: rgba(255, 255, 255, 0.86);
   font-size: 14px;
   font-weight: 700;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
 }
 
 .board-topbar-search-icon {
@@ -4446,6 +4447,7 @@ body {
   min-height: 270px;
   border: 1px solid #d7e0ec;
   background:
+    linear-gradient(180deg, transparent 58%, rgba(10, 22, 49, 0.38) 100%),
     linear-gradient(135deg, rgba(12, 45, 107, 0.08), rgba(12, 45, 107, 0.01)),
     radial-gradient(circle at 20% 20%, rgba(12, 45, 107, 0.15), transparent 36%),
     radial-gradient(circle at 80% 70%, rgba(14, 116, 144, 0.12), transparent 28%),
@@ -4469,6 +4471,41 @@ body {
 
 .board-lead-sidebar {
   gap: 16px;
+}
+
+.board-hero-live-card {
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+  border: 2px solid #0b57d0;
+  background: #ffffff;
+}
+
+.board-hero-live-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  background: #0b57d0;
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.board-hero-live-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.board-hero-live-show {
+  color: #123b87;
+  font-size: 0.98rem;
+  line-height: 1.2;
+  font-weight: 900;
+  letter-spacing: -0.02em;
 }
 
 .board-lead-sidebar-block {

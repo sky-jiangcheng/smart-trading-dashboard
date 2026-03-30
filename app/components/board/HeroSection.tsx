@@ -178,6 +178,22 @@ export default function HeroSection({
         ) : null}
 
         <aside className="board-lead-sidebar">
+          <article className="board-hero-live-card">
+            <a href={topNews?.url || "#"} target={topNews?.url ? "_blank" : undefined} rel={topNews?.url ? "noopener noreferrer" : undefined} className="board-hero-live-button">
+              {isZh ? "观看实时更新" : "Watch Livestream"}
+            </a>
+            <div className="board-hero-live-grid">
+              <div>
+                <div className="board-panel-label">{isZh ? "现在" : "Now"}</div>
+                <div className="board-hero-live-show">{isZh ? "市场速览" : "Market Pulse"}</div>
+              </div>
+              <div>
+                <div className="board-panel-label">{isZh ? "接下来" : "Up Next"}</div>
+                <div className="board-hero-live-show">{isZh ? "资金流向" : "Money Movers"}</div>
+              </div>
+            </div>
+          </article>
+
           <div className="board-lead-sidebar-block">
             <div className="board-story-card-top">
               <span className="board-panel-label">{isZh ? "最新头条" : "Latest News"}</span>
